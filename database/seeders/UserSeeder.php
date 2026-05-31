@@ -2,23 +2,21 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
-class UserSeeder extends Seeder 
+class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        User::updateOrCreate(
-            ['email' => 'admin@barberia.com'],
+        User::query()->updateOrCreate(
+            ['phone' => '7151234567'],
             [
-                'name' => 'Administrador',
-                'password' => Hash::make('admin12345'),
+                'shared_id' => (string) Str::uuid(),
+                'name' => 'Barbero principal',
+                'password' => 'password',
+                'role' => 'barber',
             ]
         );
     }
