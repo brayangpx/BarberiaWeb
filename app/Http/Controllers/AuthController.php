@@ -21,7 +21,8 @@ class AuthController extends Controller
 
         if (Auth::attempt($credenciales)) {
             $request->session()->regenerate();
-            return redirect()->route('agenda.index');
+
+            return redirect()->route('agenda');
         }
 
         return back()
@@ -32,6 +33,7 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         Auth::logout();
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

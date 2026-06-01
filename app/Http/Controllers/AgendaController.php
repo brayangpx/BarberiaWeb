@@ -44,7 +44,7 @@ class AgendaController extends Controller
                 ->where('appointment_type', 'quick')
                 ->count(),
 
-            'conClientes' => DB::connection($conexion)->table('appointments')
+            'conCliente' => DB::connection($conexion)->table('appointments')
                 ->whereDate('appointment_date', $hoy)
                 ->whereNotNull('client_shared_id')
                 ->count(),
@@ -53,7 +53,7 @@ class AgendaController extends Controller
         $notificaciones = $notificationService->ultimas(5);
         $totalNotificaciones = $notificaciones->count();
 
-        return view('agenda.index', [
+        return view('agenda', [
             'citas' => $citas,
             'resumen' => $resumen,
             'hoy' => $hoy,

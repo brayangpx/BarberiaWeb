@@ -37,7 +37,7 @@ class ClientController extends Controller
         $notificaciones = $notificationService->ultimas(5);
         $totalNotificaciones = $notificaciones->count();
 
-        return view('clients.index', [
+        return view('clientes', [
             'clientes' => $clientes,
             'notificaciones' => $notificaciones,
             'totalNotificaciones' => $totalNotificaciones,

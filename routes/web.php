@@ -17,7 +17,8 @@ Route::post('/login', [AuthController::class, 'autenticar'])->name('login.post')
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/agenda', [AgendaController::class, 'index'])->name('agenda');
+    Route::get('/agenda', [AgendaController::class, 'index'])
+        ->name('agenda');
 
     Route::get('/registrar-servicio', [AppointmentController::class, 'create'])
         ->name('registrar-servicio');

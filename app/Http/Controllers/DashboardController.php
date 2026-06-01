@@ -16,7 +16,7 @@ class DashboardController extends Controller
         $notificaciones = $notificationService->ultimas(5);
         $totalNotificaciones = $notificaciones->count();
 
-        return view('dashboard.index', [
+        return view('dashboard', [
             'datos' => $this->dashboard->datos(),
             'notificaciones' => $notificaciones,
             'totalNotificaciones' => $totalNotificaciones,

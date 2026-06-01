@@ -16,7 +16,7 @@ class HeatmapController extends Controller
         $notificaciones = $notificationService->ultimas(5);
         $totalNotificaciones = $notificaciones->count();
 
-        return view('heatmap.index', array_merge(
+        return view('mapa-calor', array_merge(
             $this->heatmap->matriz(),
             [
                 'notificaciones' => $notificaciones,
