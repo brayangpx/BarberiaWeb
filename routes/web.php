@@ -17,21 +17,38 @@ Route::post('/login', [AuthController::class, 'autenticar'])->name('login.post')
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/agenda', [AgendaController::class, 'index'])->name('agenda.index');
+    Route::get('/agenda', [AgendaController::class, 'index'])->name('agenda');
 
-    Route::get('/appointments', [AppointmentController::class, 'index'])->name('appointments.index');
-    Route::get('/appointments/search', [AppointmentController::class, 'search'])->name('appointments.search');
-    Route::get('/appointments/create', [AppointmentController::class, 'create'])->name('appointments.create');
-    Route::post('/appointments', [AppointmentController::class, 'store'])->name('appointments.store');
-    Route::post('/appointments/{sharedId}/status', [AppointmentController::class, 'updateStatus'])->name('appointments.status');
+    Route::get('/registrar-servicio', [AppointmentController::class, 'create'])
+        ->name('registrar-servicio');
 
-    Route::post('/appointments/preview-temp', [HaircutPreviewController::class, 'generateTemp'])->name('appointments.preview-temp');
+    Route::get('/citas', [AppointmentController::class, 'index'])
+        ->name('citas');
 
-    Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
-    Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
+    Route::get('/citas/buscar', [AppointmentController::class, 'search'])
+        ->name('citas.buscar');
 
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
-    Route::get('/heatmap', [HeatmapController::class, 'index'])->name('heatmap.index');
+    Route::post('/citas', [AppointmentController::class, 'store'])
+        ->name('citas.store');
 
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/citas/{sharedId}/estado', [AppointmentController::class, 'updateStatus'])
+        ->name('citas.estado');
+
+    Route::post('/citas/previsualizacion-temporal', [HaircutPreviewController::class, 'generateTemp'])
+        ->name('citas.previsualizacion');
+
+    Route::get('/clientes', [ClientController::class, 'index'])
+        ->name('clientes');
+
+    Route::post('/clientes', [ClientController::class, 'store'])
+        ->name('clientes.store');
+
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
+
+    Route::get('/mapa-calor', [HeatmapController::class, 'index'])
+        ->name('mapa-calor');
+
+    Route::get('/notificaciones', [NotificationController::class, 'index'])
+        ->name('notificaciones');
 });
