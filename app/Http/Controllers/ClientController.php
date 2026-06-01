@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Client;
 use App\Services\DatabaseHealthService;
 use App\Services\DualWriteService;
 use App\Services\InternalNotificationService;
 use App\Services\SharedIdService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ClientController extends Controller
 {
@@ -22,17 +22,12 @@ class ClientController extends Controller
     {
         $conexion = $this->health->conexionLectura();
 
-        $clientes = DB::connection($conexion)->table('clients')
+        $clientes = Client::on($conexion)
+            ->withCount([
+                'citas as visitas' => fn ($consulta) => $consulta->where('status', 'completed'),
+            ])
             ->orderBy('name')
-            ->get()
-            ->map(function ($cliente) use ($conexion) {
-                $cliente->visitas = DB::connection($conexion)->table('appointments')
-                    ->where('client_shared_id', $cliente->shared_id)
-                    ->where('status', 'completed')
-                    ->count();
-
-                return $cliente;
-            });
+            ->get();
 
         $notificaciones = $notificationService->ultimas(5);
         $totalNotificaciones = $notificaciones->count();
@@ -51,7 +46,7 @@ class ClientController extends Controller
             'phone' => ['nullable', 'max:30'],
         ]);
 
-        $this->dualWrite->insertar('clients', [
+        $this->dualWrite->insertar(Client::class, [
             'shared_id' => $this->sharedIds->crear('client'),
             'name' => $request->input('name'),
             'phone' => $request->input('phone'),

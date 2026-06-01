@@ -2,64 +2,90 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\DB;
+use App\Models\Appointment;
+use App\Models\Client;
+use App\Models\HaircutPreview;
+use App\Models\HaircutStyle;
+use App\Models\InternalNotification;
+use App\Models\PendingSync;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Throwable;
 
 class SyncService
 {
+    private array $modelosPorTabla = [
+        'appointments' => Appointment::class,
+        'clients' => Client::class,
+        'haircut_previews' => HaircutPreview::class,
+        'haircut_styles' => HaircutStyle::class,
+        'internal_notifications' => InternalNotification::class,
+        'pending_syncs' => PendingSync::class,
+        'users' => User::class,
+    ];
+
     public function sincronizarPendientes(): int
     {
         $sincronizados = 0;
 
         foreach (['mysql', 'mysql_secondary'] as $conexionOrigen) {
-            $pendientes = DB::connection($conexionOrigen)->table('pending_syncs')
+            $pendientes = PendingSync::on($conexionOrigen)
                 ->where('status', 'pending')
                 ->get();
 
             foreach ($pendientes as $pendiente) {
                 try {
-                    $datos = json_decode($pendiente->payload, true) ?: [];
+                    $datos = is_array($pendiente->payload)
+                        ? $pendiente->payload
+                        : (json_decode($pendiente->payload, true) ?: []);
 
                     if ($pendiente->operation === 'insert') {
-                        $existe = DB::connection($pendiente->target_connection)
-                            ->table($pendiente->table_name)
+                        $existe = $this->modeloParaTabla($pendiente->table_name, $pendiente->target_connection)
+                            ->newQuery()
                             ->where('shared_id', $pendiente->record_shared_id)
                             ->exists();
 
                         if (! $existe) {
-                            DB::connection($pendiente->target_connection)
-                                ->table($pendiente->table_name)
-                                ->insert($datos);
+                            $this->modeloParaTabla($pendiente->table_name, $pendiente->target_connection)
+                                ->newQuery()
+                                ->create($datos);
                         }
                     }
 
                     if ($pendiente->operation === 'update') {
-                        DB::connection($pendiente->target_connection)
-                            ->table($pendiente->table_name)
+                        $this->modeloParaTabla($pendiente->table_name, $pendiente->target_connection)
+                            ->newQuery()
                             ->where('shared_id', $pendiente->record_shared_id)
                             ->update($datos);
                     }
 
-                    DB::connection($conexionOrigen)->table('pending_syncs')
-                        ->where('id', $pendiente->id)
-                        ->update([
-                            'status' => 'synced',
-                            'updated_at' => now(),
-                        ]);
+                    $pendiente->forceFill([
+                        'status' => 'synced',
+                    ])->save();
 
                     $sincronizados++;
                 } catch (Throwable $e) {
-                    DB::connection($conexionOrigen)->table('pending_syncs')
-                        ->where('id', $pendiente->id)
-                        ->update([
-                            'attempts' => $pendiente->attempts + 1,
-                            'error_message' => $e->getMessage(),
-                            'updated_at' => now(),
-                        ]);
+                    $pendiente->forceFill([
+                        'attempts' => $pendiente->attempts + 1,
+                        'error_message' => $e->getMessage(),
+                    ])->save();
                 }
             }
         }
 
         return $sincronizados;
+    }
+
+    private function modeloParaTabla(string $tabla, string $conexion): Model
+    {
+        $clase = $this->modelosPorTabla[$tabla] ?? null;
+
+        if ($clase) {
+            return (new $clase)->setConnection($conexion);
+        }
+
+        return (new class extends Model {
+            protected $guarded = [];
+        })->setTable($tabla)->setConnection($conexion);
     }
 }

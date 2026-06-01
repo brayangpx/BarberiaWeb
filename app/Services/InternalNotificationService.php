@@ -2,8 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Appointment;
+use App\Models\InternalNotification;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 class InternalNotificationService
 {
@@ -19,7 +20,7 @@ class InternalNotificationService
         $this->generarDeCitasProximas();
         $conexion = $this->health->conexionLectura();
 
-        return DB::connection($conexion)->table('internal_notifications')
+        return InternalNotification::on($conexion)
             ->orderByDesc('generated_at')
             ->limit($limite)
             ->get();
@@ -31,10 +32,10 @@ class InternalNotificationService
         $ahora = now();
         $limite = now()->addMinutes(5);
 
-        $citas = DB::connection($conexion)->table('appointments')
-            ->leftJoin('clients', 'appointments.client_shared_id', '=', 'clients.shared_id')
-            ->where('appointments.status', 'pending')
-            ->select('appointments.*', 'clients.name as client_name')
+        $citas = Appointment::on($conexion)
+            ->with('cliente')
+            ->where('status', 'pending')
+            ->whereDoesntHave('notificacion')
             ->get();
 
         foreach ($citas as $cita) {
@@ -44,18 +45,10 @@ class InternalNotificationService
                 continue;
             }
 
-            $yaExiste = DB::connection($conexion)->table('internal_notifications')
-                ->where('appointment_shared_id', $cita->shared_id)
-                ->exists();
-
-            if ($yaExiste) {
-                continue;
-            }
-
-            $cliente = $cita->client_name ?: 'un cliente';
+            $cliente = $cita->cliente?->name ?: 'un cliente';
             $hora = $inicio->format('g:i A');
 
-            $this->dualWrite->insertar('internal_notifications', [
+            $this->dualWrite->insertar(InternalNotification::class, [
                 'shared_id' => $this->sharedIds->crear('notif'),
                 'appointment_shared_id' => $cita->shared_id,
                 'title' => 'Cita próxima',

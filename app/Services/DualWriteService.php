@@ -2,7 +2,8 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\DB;
+use App\Models\PendingSync;
+use Illuminate\Database\Eloquent\Model;
 use RuntimeException;
 use Throwable;
 
@@ -14,13 +15,14 @@ class DualWriteService
     {
     }
 
-    public function insertar(string $tabla, array $datos): void
+    public function insertar(string $modeloOTabla, array $datos): void
     {
         $seGuardo = false;
+        $tabla = $this->nombreTabla($modeloOTabla);
 
         foreach ($this->conexiones as $conexion) {
             try {
-                DB::connection($conexion)->table($tabla)->insert($datos);
+                $this->nuevoModelo($modeloOTabla, $conexion)->newQuery()->create($datos);
                 $seGuardo = true;
             } catch (Throwable $e) {
                 $this->registrarPendiente($conexion, $tabla, 'insert', $datos['shared_id'] ?? null, $datos, $e->getMessage());
@@ -32,13 +34,18 @@ class DualWriteService
         }
     }
 
-    public function actualizar(string $tabla, string $sharedId, array $datos): void
+    public function actualizar(string $modeloOTabla, string $sharedId, array $datos): void
     {
         $seActualizo = false;
+        $tabla = $this->nombreTabla($modeloOTabla);
 
         foreach ($this->conexiones as $conexion) {
             try {
-                DB::connection($conexion)->table($tabla)->where('shared_id', $sharedId)->update($datos);
+                $this->nuevoModelo($modeloOTabla, $conexion)
+                    ->newQuery()
+                    ->where('shared_id', $sharedId)
+                    ->update($datos);
+
                 $seActualizo = true;
             } catch (Throwable $e) {
                 $this->registrarPendiente($conexion, $tabla, 'update', $sharedId, $datos, $e->getMessage());
@@ -58,7 +65,7 @@ class DualWriteService
             'table_name' => $tabla,
             'operation' => $operacion,
             'record_shared_id' => $sharedIdRegistro,
-            'payload' => json_encode($datos),
+            'payload' => $datos,
             'status' => 'pending',
             'attempts' => 0,
             'error_message' => $error,
@@ -72,10 +79,30 @@ class DualWriteService
             }
 
             try {
-                DB::connection($conexion)->table('pending_syncs')->insert($pendiente);
+                PendingSync::on($conexion)->create($pendiente);
                 return;
             } catch (Throwable $e) {
             }
         }
+    }
+
+    private function nuevoModelo(string $modeloOTabla, string $conexion): Model
+    {
+        if (class_exists($modeloOTabla) && is_subclass_of($modeloOTabla, Model::class)) {
+            return (new $modeloOTabla)->setConnection($conexion);
+        }
+
+        return (new class extends Model {
+            protected $guarded = [];
+        })->setTable($modeloOTabla)->setConnection($conexion);
+    }
+
+    private function nombreTabla(string $modeloOTabla): string
+    {
+        if (class_exists($modeloOTabla) && is_subclass_of($modeloOTabla, Model::class)) {
+            return (new $modeloOTabla)->getTable();
+        }
+
+        return $modeloOTabla;
     }
 }

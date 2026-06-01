@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\DB;
+use App\Models\Appointment;
 
 class HeatmapService
 {
@@ -23,7 +23,7 @@ class HeatmapService
             }
         }
 
-        $citas = DB::connection($conexion)->table('appointments')
+        $citas = Appointment::on($conexion)
             ->whereIn('status', ['completed', 'confirmed'])
             ->get();
 

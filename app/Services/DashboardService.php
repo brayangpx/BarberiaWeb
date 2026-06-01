@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\DB;
+use App\Models\Appointment;
 
 class DashboardService
 {
@@ -13,7 +13,7 @@ class DashboardService
     public function datos(): array
     {
         $conexion = $this->health->conexionLectura();
-        $base = DB::connection($conexion)->table('appointments');
+        $base = Appointment::on($conexion);
 
         $ingresosTotales = (clone $base)
             ->where('status', 'completed')
@@ -27,7 +27,7 @@ class DashboardService
             ->where('appointment_type', 'quick')
             ->count();
 
-        $clientesConcurrentes = DB::connection($conexion)->table('appointments')
+        $clientesConcurrentes = (clone $base)
             ->whereNotNull('client_shared_id')
             ->where('status', 'completed')
             ->distinct('client_shared_id')
@@ -61,7 +61,7 @@ class DashboardService
 
     private function horarioMasActivo(string $conexion): array
     {
-        $citas = DB::connection($conexion)->table('appointments')
+        $citas = Appointment::on($conexion)
             ->where('status', 'completed')
             ->get();
 

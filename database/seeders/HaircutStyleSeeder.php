@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\HaircutStyle;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class HaircutStyleSeeder extends Seeder
@@ -19,7 +19,7 @@ class HaircutStyleSeeder extends Seeder
         ];
 
         foreach ($cortes as $corte) {
-            DB::table('haircut_styles')->updateOrInsert(
+            HaircutStyle::query()->updateOrCreate(
                 ['name' => $corte['name']],
                 [
                     'shared_id' => (string) Str::uuid(),

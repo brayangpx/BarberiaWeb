@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Appointment;
+use App\Models\Client;
+use App\Models\HaircutPreview;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -20,7 +23,7 @@ class AppointmentService
         if (! $clienteSharedId && $request->filled('client_name')) {
             $clienteSharedId = $this->sharedIds->crear('client');
 
-            $this->dualWrite->insertar('clients', [
+            $this->dualWrite->insertar(Client::class, [
                 'shared_id' => $clienteSharedId,
                 'name' => $request->input('client_name'),
                 'phone' => $request->input('client_phone'),
@@ -58,10 +61,10 @@ class AppointmentService
             'updated_at' => now(),
         ];
 
-        $this->dualWrite->insertar('appointments', $datos);
+        $this->dualWrite->insertar(Appointment::class, $datos);
 
         if ($request->filled('original_image_temp_path') && $request->filled('generated_image_temp_path')) {
-            $this->dualWrite->insertar('haircut_previews', [
+            $this->dualWrite->insertar(HaircutPreview::class, [
                 'shared_id' => $this->sharedIds->crear('preview'),
                 'appointment_shared_id' => $sharedId,
                 'original_image_url' => $request->input('original_image_temp_path'),
@@ -79,7 +82,7 @@ class AppointmentService
 
     public function cambiarEstado(string $sharedIdCita, string $estado): void
     {
-        $this->dualWrite->actualizar('appointments', $sharedIdCita, [
+        $this->dualWrite->actualizar(Appointment::class, $sharedIdCita, [
             'status' => $estado,
             'updated_at' => now(),
         ]);

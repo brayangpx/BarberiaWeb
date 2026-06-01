@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Appointment;
 use App\Services\DatabaseHealthService;
 use App\Services\InternalNotificationService;
-use Illuminate\Support\Facades\DB;
 
 class AgendaController extends Controller
 {
@@ -17,35 +17,33 @@ class AgendaController extends Controller
         $conexion = $this->health->conexionLectura();
         $hoy = now()->toDateString();
 
-        $citas = DB::connection($conexion)->table('appointments')
-            ->leftJoin('clients', 'appointments.client_shared_id', '=', 'clients.shared_id')
-            ->leftJoin('haircut_styles', 'appointments.haircut_style_shared_id', '=', 'haircut_styles.shared_id')
-            ->whereDate('appointments.appointment_date', $hoy)
-            ->orderBy('appointments.start_time')
-            ->select(
-                'appointments.*',
-                'clients.name as client_name',
-                'haircut_styles.name as haircut_name'
-            )
-            ->get();
+        $citas = Appointment::on($conexion)
+            ->with(['cliente', 'corte'])
+            ->whereDate('appointment_date', $hoy)
+            ->orderBy('start_time')
+            ->get()
+            ->map(function (Appointment $cita) {
+                $cita->setAttribute('client_name', $cita->cliente?->name);
+                $cita->setAttribute('haircut_name', $cita->corte?->name);
+
+                return $cita;
+            });
+
+        $baseResumen = Appointment::on($conexion)->whereDate('appointment_date', $hoy);
 
         $resumen = [
-            'ingresos' => DB::connection($conexion)->table('appointments')
-                ->whereDate('appointment_date', $hoy)
+            'ingresos' => (clone $baseResumen)
                 ->where('status', 'completed')
                 ->sum('final_price'),
 
-            'servicios' => DB::connection($conexion)->table('appointments')
-                ->whereDate('appointment_date', $hoy)
+            'servicios' => (clone $baseResumen)
                 ->count(),
 
-            'rapidos' => DB::connection($conexion)->table('appointments')
-                ->whereDate('appointment_date', $hoy)
+            'rapidos' => (clone $baseResumen)
                 ->where('appointment_type', 'quick')
                 ->count(),
 
-            'conCliente' => DB::connection($conexion)->table('appointments')
-                ->whereDate('appointment_date', $hoy)
+            'conCliente' => (clone $baseResumen)
                 ->whereNotNull('client_shared_id')
                 ->count(),
         ];

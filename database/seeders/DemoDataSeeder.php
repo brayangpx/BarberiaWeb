@@ -2,16 +2,19 @@
 
 namespace Database\Seeders;
 
+use App\Models\Appointment;
+use App\Models\Client;
+use App\Models\HaircutStyle;
+use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class DemoDataSeeder extends Seeder
 {
     public function run(): void
     {
-        $usuario = DB::table('users')->first();
-        $cortes = DB::table('haircut_styles')->get();
+        $usuario = User::query()->first();
+        $cortes = HaircutStyle::query()->get();
 
         if (!$usuario || $cortes->isEmpty()) {
             return;
@@ -22,7 +25,7 @@ class DemoDataSeeder extends Seeder
         for ($i = 1; $i <= 120; $i++) {
             $sharedId = (string) Str::uuid();
 
-            DB::table('clients')->insert([
+            Client::query()->create([
                 'shared_id' => $sharedId,
                 'name' => 'Cliente Demo ' . $i,
                 'phone' => '71510' . str_pad((string) $i, 5, '0', STR_PAD_LEFT),
@@ -36,8 +39,6 @@ class DemoDataSeeder extends Seeder
 
         $estados = ['completed', 'completed', 'completed', 'confirmed', 'pending', 'cancelled'];
         $horas = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'];
-
-        $citas = [];
 
         for ($i = 1; $i <= 3000; $i++) {
             $esRapida = rand(1, 100) <= 40;
@@ -53,7 +54,7 @@ class DemoDataSeeder extends Seeder
                     ->toDateString();
             }
 
-            $citas[] = [
+            Appointment::query()->create([
                 'shared_id' => (string) Str::uuid(),
                 'user_shared_id' => $usuario->shared_id,
                 'client_shared_id' => $esRapida ? null : $clientesGuardados[array_rand($clientesGuardados)],
@@ -67,16 +68,7 @@ class DemoDataSeeder extends Seeder
                 'notes' => null,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ];
-
-            if (count($citas) === 500) {
-                DB::table('appointments')->insert($citas);
-                $citas = [];
-            }
-        }
-
-        if (!empty($citas)) {
-            DB::table('appointments')->insert($citas);
+            ]);
         }
     }
 }

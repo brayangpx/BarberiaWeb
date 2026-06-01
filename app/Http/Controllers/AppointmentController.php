@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Appointment;
+use App\Models\Client;
+use App\Models\HaircutStyle;
 use App\Services\AppointmentService;
 use App\Services\DatabaseHealthService;
 use App\Services\InternalNotificationService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class AppointmentController extends Controller
 {
@@ -39,11 +41,11 @@ class AppointmentController extends Controller
     {
         $conexion = $this->health->conexionLectura();
 
-        $clientes = DB::connection($conexion)->table('clients')
+        $clientes = Client::on($conexion)
             ->orderBy('name')
             ->get();
 
-        $cortes = DB::connection($conexion)->table('haircut_styles')
+        $cortes = HaircutStyle::on($conexion)
             ->orderBy('name')
             ->get();
 
@@ -87,24 +89,26 @@ class AppointmentController extends Controller
     {
         $conexion = $this->health->conexionLectura();
 
-        $consulta = DB::connection($conexion)->table('appointments')
-            ->leftJoin('clients', 'appointments.client_shared_id', '=', 'clients.shared_id')
-            ->leftJoin('haircut_styles', 'appointments.haircut_style_shared_id', '=', 'haircut_styles.shared_id')
-            ->select(
-                'appointments.*',
-                'clients.name as client_name',
-                'haircut_styles.name as haircut_name'
-            )
-            ->orderByDesc('appointments.appointment_date')
-            ->orderByDesc('appointments.start_time');
+        $consulta = Appointment::on($conexion)
+            ->with(['cliente', 'corte'])
+            ->orderByDesc('appointment_date')
+            ->orderByDesc('start_time');
 
         if ($texto) {
             $consulta->where(function ($subconsulta) use ($texto) {
-                $subconsulta->where('clients.name', 'like', "%{$texto}%")
-                    ->orWhere('haircut_styles.name', 'like', "%{$texto}%");
+                $subconsulta->whereHas('cliente', function ($cliente) use ($texto) {
+                    $cliente->where('name', 'like', "%{$texto}%");
+                })->orWhereHas('corte', function ($corte) use ($texto) {
+                    $corte->where('name', 'like', "%{$texto}%");
+                });
             });
         }
 
-        return $consulta->limit(50)->get();
+        return $consulta->limit(50)->get()->map(function (Appointment $cita) {
+            $cita->setAttribute('client_name', $cita->cliente?->name);
+            $cita->setAttribute('haircut_name', $cita->corte?->name);
+
+            return $cita;
+        });
     }
 }
