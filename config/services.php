@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'huggingface' => [
+        'token' => env('HUGGINGFACE_API_TOKEN'),
+        'model' => env('HUGGINGFACE_MODEL', 'timbrooks/instruct-pix2pix'),
+        'endpoint' => env('HUGGINGFACE_ENDPOINT', 'https://api-inference.huggingface.co/models/timbrooks/instruct-pix2pix'),
+    ],
+
 ];
