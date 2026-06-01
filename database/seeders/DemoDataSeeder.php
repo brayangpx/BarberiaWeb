@@ -38,20 +38,48 @@ class DemoDataSeeder extends Seeder
         }
 
         $estados = ['completed', 'completed', 'completed', 'confirmed', 'pending', 'cancelled'];
-        $horas = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'];
+
+        $diasConPeso = [
+            1 => 7,
+            2 => 8,
+            3 => 10,
+            4 => 14,
+            5 => 26,
+            6 => 28,
+            7 => 7,
+        ];
+
+        $horasConPeso = [
+            '09:00' => 6,
+            '10:00' => 8,
+            '11:00' => 10,
+            '12:00' => 12,
+            '13:00' => 7,
+            '14:00' => 12,
+            '15:00' => 22,
+            '16:00' => 23,
+        ];
+
+        $horasPicoPorDia = [
+            5 => ['15:00', '16:00'],
+            6 => ['11:00', '12:00', '15:00', '16:00'],
+            4 => ['14:00', '15:00'],
+        ];
 
         for ($i = 1; $i <= 3000; $i++) {
             $esRapida = rand(1, 100) <= 40;
             $estado = $estados[array_rand($estados)];
+            $numeroDia = $this->valorPonderado($diasConPeso);
+            $hora = $this->valorPonderado($horasConPeso);
 
-            $fecha = now()
-                ->subDays(rand(0, 120))
-                ->toDateString();
+            if (isset($horasPicoPorDia[$numeroDia]) && rand(1, 100) <= 70) {
+                $hora = $horasPicoPorDia[$numeroDia][array_rand($horasPicoPorDia[$numeroDia])];
+            }
+
+            $fecha = $this->fechaConDiaSemana($numeroDia, false);
 
             if ($estado === 'pending' || $estado === 'confirmed') {
-                $fecha = now()
-                    ->addDays(rand(0, 20))
-                    ->toDateString();
+                $fecha = $this->fechaConDiaSemana($numeroDia, true);
             }
 
             Appointment::query()->create([
@@ -61,7 +89,7 @@ class DemoDataSeeder extends Seeder
                 'haircut_style_shared_id' => $cortes->random()->shared_id,
                 'appointment_type' => $esRapida ? 'quick' : 'scheduled',
                 'appointment_date' => $fecha,
-                'start_time' => $horas[array_rand($horas)],
+                'start_time' => $hora,
                 'duration_minutes' => rand(20, 60),
                 'final_price' => rand(100, 300),
                 'status' => $estado,
@@ -70,5 +98,34 @@ class DemoDataSeeder extends Seeder
                 'updated_at' => now(),
             ]);
         }
+    }
+
+    private function valorPonderado(array $opciones): int|string
+    {
+        $total = array_sum($opciones);
+        $aleatorio = rand(1, $total);
+
+        foreach ($opciones as $valor => $peso) {
+            $aleatorio -= $peso;
+
+            if ($aleatorio <= 0) {
+                return is_numeric($valor) ? (int) $valor : $valor;
+            }
+        }
+
+        return array_key_first($opciones);
+    }
+
+    private function fechaConDiaSemana(int $numeroDia, bool $futura): string
+    {
+        $fecha = $futura
+            ? now()->addDays(rand(1, 28))
+            : now()->subDays(rand(1, 120));
+
+        while ((int) $fecha->format('N') !== $numeroDia) {
+            $fecha = $futura ? $fecha->addDay() : $fecha->subDay();
+        }
+
+        return $fecha->toDateString();
     }
 }
