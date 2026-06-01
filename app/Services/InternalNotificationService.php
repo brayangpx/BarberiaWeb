@@ -36,7 +36,8 @@ class InternalNotificationService
             ->get();
 
         foreach ($citas as $cita) {
-            $inicio = now()->parse($cita->appointment_date . ' ' . $cita->start_time);
+            $fecha = $cita->appointment_date->toDateString();
+            $inicio = now()->parse($fecha . ' ' . $cita->start_time);
 
             if ($inicio->lt($ahora) || $inicio->gt($limite)) {
                 continue;
