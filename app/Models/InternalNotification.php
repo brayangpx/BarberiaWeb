@@ -9,16 +9,21 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'shared_id',
     'appointment_shared_id',
-    'original_image_url',
-    'generated_image_url',
-    'prompt',
-    'status',
-    'error_message',
+    'title',
+    'message',
+    'generated_at',
 ])]
-class HaircutPreview extends Model
+class InternalNotification extends Model
 {
     public function cita(): BelongsTo
     {
         return $this->belongsTo(Appointment::class, 'appointment_shared_id', 'shared_id');
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'generated_at' => 'datetime',
+        ];
     }
 }

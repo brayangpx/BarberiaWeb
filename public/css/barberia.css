@@ -1,0 +1,84 @@
+body {
+    background: #f4f4f6;
+}
+
+.sidebar {
+    width: 230px;
+    min-height: 100vh;
+    background: #3b3344;
+}
+
+.sidebar a {
+    color: #ffffff;
+    text-decoration: none;
+    display: block;
+    padding: 10px 16px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+}
+
+.sidebar a.active,
+.sidebar a:hover {
+    background: #6f42c1;
+}
+
+.main-content {
+    min-height: 100vh;
+    padding-bottom: 80px;
+}
+
+.card {
+    border: 0;
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.btn-primary,
+.bg-primary {
+    background-color: #6f42c1 !important;
+    border-color: #6f42c1 !important;
+}
+
+.bottom-nav {
+    background: #ffffff;
+    border-top: 1px solid #dddddd;
+}
+
+.bottom-nav a {
+    color: #555555;
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.bottom-nav a.active {
+    color: #6f42c1;
+    font-weight: 600;
+}
+
+.preview-box {
+    min-height: 150px;
+    border: 1px dashed #bbbbbb;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fafafa;
+}
+
+.heat-cell {
+    min-width: 58px;
+    height: 38px;
+    vertical-align: middle;
+}
+
+.level-low {
+    background: #d8f3dc !important;
+}
+
+.level-medium {
+    background: #fff3cd !important;
+}
+
+.level-high {
+    background: #f8d7da !important;
+}

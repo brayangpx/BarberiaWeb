@@ -8,21 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('haircut_previews', function (Blueprint $table) {
+        Schema::create('internal_notifications', function (Blueprint $table) {
             $table->id();
             $table->string('shared_id')->unique();
             $table->string('appointment_shared_id')->unique();
-            $table->string('original_image_url');
-            $table->string('generated_image_url');
-            $table->text('prompt')->nullable();
-            $table->string('status', 30)->default('completed');
-            $table->text('error_message')->nullable();
+            $table->string('title');
+            $table->text('message');
+            $table->dateTime('generated_at');
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('haircut_previews');
+        Schema::dropIfExists('internal_notifications');
     }
 };
