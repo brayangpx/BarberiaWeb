@@ -24,11 +24,12 @@ class HaircutPreviewController extends Controller
         $resultado = $huggingFace->generar($rutaOriginal, $prompt);
 
         return response()->json([
+            'ok' => true,
             'original_image_temp_path' => $rutaOriginal,
             'generated_image_temp_path' => $resultado['path'],
+            'generated_image_url' => asset('storage/' . $resultado['path']),
             'preview_prompt' => $prompt,
-            'ok' => $resultado['ok'],
-            'error' => $resultado['error'],
+            'error' => null,
         ]);
     }
 }

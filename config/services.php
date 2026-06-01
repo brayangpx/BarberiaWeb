@@ -37,8 +37,9 @@ return [
 
     'huggingface' => [
         'token' => env('HUGGINGFACE_API_TOKEN'),
-        'model' => env('HUGGINGFACE_MODEL', 'timbrooks/instruct-pix2pix'),
-        'endpoint' => env('HUGGINGFACE_ENDPOINT', 'https://api-inference.huggingface.co/models/timbrooks/instruct-pix2pix'),
+        'provider' => env('HUGGINGFACE_PROVIDER', 'fal-ai'),
+        'model' => env('HUGGINGFACE_MODEL', 'black-forest-labs/FLUX.2-dev'),
+        'provider_model' => env('HUGGINGFACE_PROVIDER_MODEL', 'fal-ai/flux-2/edit'),
     ],
 
 ];
