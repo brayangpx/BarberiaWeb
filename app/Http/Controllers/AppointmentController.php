@@ -22,7 +22,7 @@ class AppointmentController extends Controller
         $notificaciones = $notificationService->ultimas(5);
         $totalNotificaciones = $notificaciones->count();
 
-        return view('appointments.index', [
+        return view('citas', [
             'citas' => $citas,
             'busqueda' => $request->input('q'),
             'notificaciones' => $notificaciones,
@@ -50,7 +50,7 @@ class AppointmentController extends Controller
         $notificaciones = $notificationService->ultimas(5);
         $totalNotificaciones = $notificaciones->count();
 
-        return view('appointments.create', [
+        return view('registrar-servicio', [
             'clientes' => $clientes,
             'cortes' => $cortes,
             'notificaciones' => $notificaciones,
@@ -68,7 +68,7 @@ class AppointmentController extends Controller
         $this->appointments->crearDesdeRequest($request);
 
         return redirect()
-            ->route('agenda.index')
+            ->route('agenda')
             ->with('success', 'Servicio registrado correctamente.');
     }
 
