@@ -300,7 +300,7 @@
         datos.append('haircut_name', nombreCorte);
         datos.append('_token', '{{ csrf_token() }}');
 
-        fetch('{{ route('citas.previsualizacion') }}', {
+        fetch("{{ route('citas.previsualizacion') }}", {
             method: 'POST',
             body: datos
         })
