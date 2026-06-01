@@ -98,6 +98,8 @@ class DemoDataSeeder extends Seeder
                 'updated_at' => now(),
             ]);
         }
+
+        $this->crearCitasDeHoy($usuario, $cortes, $clientesGuardados);
     }
 
     private function valorPonderado(array $opciones): int|string
@@ -127,5 +129,38 @@ class DemoDataSeeder extends Seeder
         }
 
         return $fecha->toDateString();
+    }
+
+    private function crearCitasDeHoy(User $usuario, $cortes, array $clientesGuardados): void
+    {
+        $citasDeHoy = [
+            ['09:00', 'completed', false],
+            ['10:00', 'completed', true],
+            ['11:00', 'confirmed', false],
+            ['12:00', 'completed', true],
+            ['14:00', 'pending', false],
+            ['15:00', 'confirmed', true],
+            ['15:00', 'pending', false],
+            ['16:00', 'confirmed', true],
+            ['16:00', 'pending', false],
+        ];
+
+        foreach ($citasDeHoy as [$hora, $estado, $esRapida]) {
+            Appointment::query()->create([
+                'shared_id' => (string) Str::uuid(),
+                'user_shared_id' => $usuario->shared_id,
+                'client_shared_id' => $esRapida ? null : $clientesGuardados[array_rand($clientesGuardados)],
+                'haircut_style_shared_id' => $cortes->random()->shared_id,
+                'appointment_type' => $esRapida ? 'quick' : 'scheduled',
+                'appointment_date' => now()->toDateString(),
+                'start_time' => $hora,
+                'duration_minutes' => rand(25, 55),
+                'final_price' => rand(120, 280),
+                'status' => $estado,
+                'notes' => 'Servicio demo de hoy',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
     }
 }
