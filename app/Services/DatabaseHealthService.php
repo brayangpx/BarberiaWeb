@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 use Throwable;
 
 class DatabaseHealthService
@@ -19,7 +20,15 @@ class DatabaseHealthService
 
     public function conexionLectura(): string
     {
-        return $this->estaDisponible('mysql') ? 'mysql' : 'mysql_secondary';
+        if ($this->estaDisponible('mysql')) {
+            return 'mysql';
+        }
+
+        if ($this->estaDisponible('mysql_secondary')) {
+            return 'mysql_secondary';
+        }
+
+        throw new RuntimeException('No hay bases de datos disponibles.');
     }
 
     public function conexionesDisponibles(): array
