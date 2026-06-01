@@ -6,14 +6,9 @@ use App\Models\Appointment;
 
 class DashboardService
 {
-    public function __construct(private DatabaseHealthService $health)
-    {
-    }
-
     public function datos(): array
     {
-        $conexion = $this->health->conexionLectura();
-        $base = Appointment::on($conexion);
+        $base = Appointment::query();
 
         $ingresosTotales = (clone $base)
             ->where('status', 'completed')
@@ -55,13 +50,13 @@ class DashboardService
                 'scheduled' => $citasProgramadas,
             ],
 
-            'horarioMasActividad' => $this->horarioMasActivo($conexion),
+            'horarioMasActividad' => $this->horarioMasActivo(),
         ];
     }
 
-    private function horarioMasActivo(string $conexion): array
+    private function horarioMasActivo(): array
     {
-        $citas = Appointment::on($conexion)
+        $citas = Appointment::query()
             ->where('status', 'completed')
             ->get();
 

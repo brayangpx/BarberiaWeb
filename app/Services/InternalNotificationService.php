@@ -9,8 +9,7 @@ use Illuminate\Support\Collection;
 class InternalNotificationService
 {
     public function __construct(
-        private DatabaseHealthService $health,
-        private DualWriteService $dualWrite,
+        private FailoverWriteService $writeService,
         private SharedIdService $sharedIds
     ) {
     }
@@ -18,9 +17,8 @@ class InternalNotificationService
     public function ultimas(int $limite = 5): Collection
     {
         $this->generarDeCitasProximas();
-        $conexion = $this->health->conexionLectura();
 
-        return InternalNotification::on($conexion)
+        return InternalNotification::query()
             ->orderByDesc('generated_at')
             ->limit($limite)
             ->get();
@@ -28,11 +26,10 @@ class InternalNotificationService
 
     public function generarDeCitasProximas(): void
     {
-        $conexion = $this->health->conexionLectura();
         $ahora = now();
         $limite = now()->addMinutes(5);
 
-        $citas = Appointment::on($conexion)
+        $citas = Appointment::query()
             ->with('cliente')
             ->where('status', 'pending')
             ->whereDoesntHave('notificacion')
@@ -48,7 +45,7 @@ class InternalNotificationService
             $cliente = $cita->cliente?->name ?: 'un cliente';
             $hora = $inicio->format('g:i A');
 
-            $this->dualWrite->insertar(InternalNotification::class, [
+            $this->writeService->insertar(InternalNotification::class, [
                 'shared_id' => $this->sharedIds->crear('notif'),
                 'appointment_shared_id' => $cita->shared_id,
                 'title' => 'Cita próxima',

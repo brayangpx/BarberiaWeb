@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 class AppointmentService
 {
     public function __construct(
-        private DualWriteService $dualWrite,
+        private FailoverWriteService $writeService,
         private SharedIdService $sharedIds
     ) {
     }
@@ -23,7 +23,7 @@ class AppointmentService
         if (! $clienteSharedId && $request->filled('client_name')) {
             $clienteSharedId = $this->sharedIds->crear('client');
 
-            $this->dualWrite->insertar(Client::class, [
+            $this->writeService->insertar(Client::class, [
                 'shared_id' => $clienteSharedId,
                 'name' => $request->input('client_name'),
                 'phone' => $request->input('client_phone'),
@@ -61,10 +61,10 @@ class AppointmentService
             'updated_at' => now(),
         ];
 
-        $this->dualWrite->insertar(Appointment::class, $datos);
+        $this->writeService->insertar(Appointment::class, $datos);
 
         if ($request->filled('original_image_temp_path') && $request->filled('generated_image_temp_path')) {
-            $this->dualWrite->insertar(HaircutPreview::class, [
+            $this->writeService->insertar(HaircutPreview::class, [
                 'shared_id' => $this->sharedIds->crear('preview'),
                 'appointment_shared_id' => $sharedId,
                 'original_image_url' => $request->input('original_image_temp_path'),
@@ -82,7 +82,7 @@ class AppointmentService
 
     public function cambiarEstado(string $sharedIdCita, string $estado): void
     {
-        $this->dualWrite->actualizar(Appointment::class, $sharedIdCita, [
+        $this->writeService->actualizar(Appointment::class, $sharedIdCita, [
             'status' => $estado,
             'updated_at' => now(),
         ]);

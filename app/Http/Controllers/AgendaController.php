@@ -3,21 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
-use App\Services\DatabaseHealthService;
 use App\Services\InternalNotificationService;
 
 class AgendaController extends Controller
 {
-    public function __construct(private DatabaseHealthService $health)
-    {
-    }
-
     public function index(InternalNotificationService $notificationService)
     {
-        $conexion = $this->health->conexionLectura();
         $hoy = now()->toDateString();
 
-        $citas = Appointment::on($conexion)
+        $citas = Appointment::query()
             ->with(['cliente', 'corte'])
             ->whereDate('appointment_date', $hoy)
             ->orderBy('start_time')
@@ -29,7 +23,7 @@ class AgendaController extends Controller
                 return $cita;
             });
 
-        $baseResumen = Appointment::on($conexion)->whereDate('appointment_date', $hoy);
+        $baseResumen = Appointment::query()->whereDate('appointment_date', $hoy);
 
         $resumen = [
             'ingresos' => (clone $baseResumen)

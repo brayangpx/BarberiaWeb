@@ -6,15 +6,13 @@ use App\Models\Appointment;
 use App\Models\Client;
 use App\Models\HaircutStyle;
 use App\Services\AppointmentService;
-use App\Services\DatabaseHealthService;
 use App\Services\InternalNotificationService;
 use Illuminate\Http\Request;
 
 class AppointmentController extends Controller
 {
     public function __construct(
-        private AppointmentService $appointments,
-        private DatabaseHealthService $health
+        private AppointmentService $appointments
     ) {
     }
 
@@ -39,13 +37,11 @@ class AppointmentController extends Controller
 
     public function create(InternalNotificationService $notificationService)
     {
-        $conexion = $this->health->conexionLectura();
-
-        $clientes = Client::on($conexion)
+        $clientes = Client::query()
             ->orderBy('name')
             ->get();
 
-        $cortes = HaircutStyle::on($conexion)
+        $cortes = HaircutStyle::query()
             ->orderBy('name')
             ->get();
 
@@ -87,9 +83,7 @@ class AppointmentController extends Controller
 
     private function buscarCitas(?string $texto)
     {
-        $conexion = $this->health->conexionLectura();
-
-        $consulta = Appointment::on($conexion)
+        $consulta = Appointment::query()
             ->with(['cliente', 'corte'])
             ->orderByDesc('appointment_date')
             ->orderByDesc('start_time');

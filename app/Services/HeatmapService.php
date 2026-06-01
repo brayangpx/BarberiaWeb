@@ -6,14 +6,9 @@ use App\Models\Appointment;
 
 class HeatmapService
 {
-    public function __construct(private DatabaseHealthService $health)
-    {
-    }
-
     public function matriz(): array
     {
-        $conexion = $this->health->conexionLectura();
-        $dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+        $dias = ['Lunes', 'Martes', 'MiÃ©rcoles', 'Jueves', 'Viernes', 'SÃ¡bado', 'Domingo'];
         $horas = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'];
         $matriz = [];
 
@@ -23,7 +18,7 @@ class HeatmapService
             }
         }
 
-        $citas = Appointment::on($conexion)
+        $citas = Appointment::query()
             ->whereIn('status', ['completed', 'confirmed'])
             ->get();
 

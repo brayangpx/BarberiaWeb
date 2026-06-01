@@ -3,8 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
-use App\Services\DatabaseHealthService;
-use App\Services\DualWriteService;
+use App\Services\FailoverWriteService;
 use App\Services\InternalNotificationService;
 use App\Services\SharedIdService;
 use Illuminate\Http\Request;
@@ -12,17 +11,14 @@ use Illuminate\Http\Request;
 class ClientController extends Controller
 {
     public function __construct(
-        private DatabaseHealthService $health,
-        private DualWriteService $dualWrite,
+        private FailoverWriteService $writeService,
         private SharedIdService $sharedIds
     ) {
     }
 
     public function index(InternalNotificationService $notificationService)
     {
-        $conexion = $this->health->conexionLectura();
-
-        $clientes = Client::on($conexion)
+        $clientes = Client::query()
             ->withCount([
                 'citas as visitas' => fn ($consulta) => $consulta->where('status', 'completed'),
             ])
@@ -46,7 +42,7 @@ class ClientController extends Controller
             'phone' => ['nullable', 'max:30'],
         ]);
 
-        $this->dualWrite->insertar(Client::class, [
+        $this->writeService->insertar(Client::class, [
             'shared_id' => $this->sharedIds->crear('client'),
             'name' => $request->input('name'),
             'phone' => $request->input('phone'),

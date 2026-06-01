@@ -24,11 +24,19 @@ class SyncService
         'users' => User::class,
     ];
 
+    public function __construct(private DatabaseHealthService $health)
+    {
+    }
+
     public function sincronizarPendientes(): int
     {
         $sincronizados = 0;
 
         foreach (['mysql', 'mysql_secondary'] as $conexionOrigen) {
+            if (! $this->health->estaDisponible($conexionOrigen)) {
+                continue;
+            }
+
             $pendientes = PendingSync::on($conexionOrigen)
                 ->where('status', 'pending')
                 ->get();
