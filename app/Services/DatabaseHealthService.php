@@ -11,6 +11,7 @@ class DatabaseHealthService
     public function estaDisponible(string $conexion): bool
     {
         try {
+            DB::purge($conexion);
             DB::connection($conexion)->select('select 1');
             return true;
         } catch (Throwable $e) {

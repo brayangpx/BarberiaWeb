@@ -3,7 +3,12 @@
 @section('titulo', 'Registrar Servicio')
 
 @section('contenido')
-<form action="{{ route('citas.store') }}" method="POST">
+<form
+    action="{{ route('citas.store') }}"
+    method="POST"
+    data-preview-url="{{ route('citas.previsualizacion') }}"
+    data-csrf-token="{{ csrf_token() }}"
+>
     @csrf
 
     <div class="row g-3">
@@ -15,6 +20,7 @@
 
                 <div class="card-body">
                     <div class="row g-3">
+
                         <div class="col-12 col-md-6">
                             <label for="final_price" class="form-label">Precio</label>
                             <input
@@ -239,103 +245,8 @@
 @endsection
 
 @section('scripts')
-<script>
-    const inputFoto = document.getElementById('preview_image');
-    const btnSeleccionarFoto = document.getElementById('btnSeleccionarFoto');
-    const btnGenerar = document.getElementById('btnGenerar');
-    const mensajePreview = document.getElementById('mensajePreview');
+    <script src="{{ asset('js/registrar-servicio.js') }}"></script>
 
-    const imagenOriginal = document.getElementById('imagenOriginal');
-    const imagenGenerada = document.getElementById('imagenGenerada');
-    const textoOriginal = document.getElementById('textoOriginal');
-    const textoGenerada = document.getElementById('textoGenerada');
-
-    const corteSelect = document.getElementById('haircut_style_shared_id');
-    const clienteSelect = document.getElementById('client_shared_id');
-    const appointmentType = document.getElementById('appointment_type');
-
-    const originalPathInput = document.getElementById('original_image_temp_path');
-    const generatedPathInput = document.getElementById('generated_image_temp_path');
-    const promptInput = document.getElementById('preview_prompt');
-
-    btnSeleccionarFoto.addEventListener('click', function () {
-        inputFoto.click();
-    });
-
-    inputFoto.addEventListener('change', function () {
-        const archivo = inputFoto.files[0];
-
-        if (!archivo) {
-            mensajePreview.textContent = 'No se ha seleccionado ninguna imagen.';
-            return;
-        }
-
-        mensajePreview.textContent = 'Imagen seleccionada: ' + archivo.name;
-
-        const urlTemporal = URL.createObjectURL(archivo);
-        imagenOriginal.src = urlTemporal;
-        imagenOriginal.classList.remove('d-none');
-        textoOriginal.classList.add('d-none');
-    });
-
-    clienteSelect.addEventListener('change', function () {
-        if (clienteSelect.value) {
-            appointmentType.value = 'scheduled';
-        }
-    });
-
-    btnGenerar.addEventListener('click', function () {
-        const archivo = inputFoto.files[0];
-        const opcionCorte = corteSelect.options[corteSelect.selectedIndex];
-        const nombreCorte = opcionCorte ? opcionCorte.dataset.name : '';
-
-        if (!archivo) {
-            mensajePreview.textContent = 'Primero selecciona una foto.';
-            return;
-        }
-
-        if (!nombreCorte) {
-            mensajePreview.textContent = 'Primero selecciona un corte.';
-            return;
-        }
-
-        mensajePreview.textContent = 'Generando previsualización...';
-        btnGenerar.disabled = true;
-
-        const datos = new FormData();
-        datos.append('preview_image', archivo);
-        datos.append('haircut_name', nombreCorte);
-        datos.append('_token', '{{ csrf_token() }}');
-
-        fetch("{{ route('citas.previsualizacion') }}", {
-            method: 'POST',
-            body: datos
-        })
-        .then(response => response.json())
-        .then(data => {
-            btnGenerar.disabled = false;
-
-            if (!data.ok) {
-                mensajePreview.textContent = data.error || 'No se pudo generar la previsualización.';
-                return;
-            }
-
-            mensajePreview.textContent = 'Previsualización generada correctamente.';
-
-            originalPathInput.value = data.original_image_temp_path || '';
-            generatedPathInput.value = data.generated_image_temp_path || '';
-            promptInput.value = data.preview_prompt || '';
-
-            if (data.generated_image_url) {
-                imagenGenerada.src = data.generated_image_url;
-                imagenGenerada.classList.remove('d-none');
-                textoGenerada.classList.add('d-none');
-            }
-        })
-        .catch(() => {
-            btnGenerar.disabled = false;
-            mensajePreview.textContent = 'Ocurrió un error al generar la previsualización.';
-        });
-    });
-</script>
 @endsection
+
+

@@ -16,12 +16,47 @@ class InternalNotificationService
 
     public function ultimas(int $limite = 5): Collection
     {
+        $this->cancelarCitasNotificadasVencidas();
         $this->generarDeCitasProximas();
 
         return InternalNotification::query()
+            ->whereHas('cita', function ($consulta) {
+                $consulta->where('status', 'pending');
+            })
             ->orderByDesc('generated_at')
             ->limit($limite)
             ->get();
+    }
+
+    private function cancelarCitasNotificadasVencidas(): void
+    {
+        $ahora = now();
+
+        $notificaciones = InternalNotification::query()
+            ->with('cita')
+            ->whereHas('cita', function ($consulta) {
+                $consulta->whereNotIn('status', ['completed', 'cancelled']);
+            })
+            ->get();
+
+        foreach ($notificaciones as $notificacion) {
+            $cita = $notificacion->cita;
+
+            if (! $cita) {
+                continue;
+            }
+
+            $fecha = $cita->appointment_date->toDateString();
+            $termino = now()->parse($fecha . ' ' . $cita->start_time)
+                ->addMinutes((int) ($cita->duration_minutes ?: 0));
+
+            if ($termino->lt($ahora)) {
+                $this->writeService->actualizar(Appointment::class, $cita->shared_id, [
+                    'status' => 'cancelled',
+                    'updated_at' => now(),
+                ]);
+            }
+        }
     }
 
     public function generarDeCitasProximas(): void

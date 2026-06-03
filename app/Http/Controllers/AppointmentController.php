@@ -5,15 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\Appointment;
 use App\Models\Client;
 use App\Models\HaircutStyle;
-use App\Services\AppointmentService;
+use App\Models\HaircutPreview;
+use App\Services\FailoverWriteService;
 use App\Services\InternalNotificationService;
+use App\Services\SharedIdService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class AppointmentController extends Controller
 {
     public function __construct(
-        private AppointmentService $appointments
+        private FailoverWriteService $writeService,
+        private SharedIdService $sharedIds
     ) {
     }
 
@@ -35,7 +41,7 @@ class AppointmentController extends Controller
     {
         return response()->json($this->buscarCitas($request->input('query')));
     }
-
+ 
     public function create(InternalNotificationService $notificationService)
     {
         $clientes = Client::query()
@@ -45,7 +51,7 @@ class AppointmentController extends Controller
         $cortes = HaircutStyle::query()
             ->orderBy('name')
             ->get();
-
+ 
         $notificaciones = $notificationService->ultimas(5);
         $totalNotificaciones = $notificaciones->count();
 
@@ -70,10 +76,10 @@ class AppointmentController extends Controller
             'duration_minutes' => ['nullable', 'integer', 'min:1'],
             'client_phone' => $reglasTelefonoCliente,
         ], [
-            'client_phone.unique' => 'Este teléfono ya está registrado con otro cliente.',
+            'client_phone.unique' => 'Este telefono ya esta registrado con otro cliente.',
         ]);
 
-        $this->appointments->crearDesdeRequest($request);
+        $this->crearCitaDesdeRequest($request);
 
         return redirect()
             ->route('agenda')
@@ -86,9 +92,115 @@ class AppointmentController extends Controller
             'status' => ['required', 'in:pending,confirmed,completed,cancelled'],
         ]);
 
-        $this->appointments->cambiarEstado($sharedId, $request->input('status'));
+        $this->writeService->actualizar(Appointment::class, $sharedId, [
+            'status' => $request->input('status'),
+            'updated_at' => now(),
+        ]);
 
         return back()->with('success', 'Estado actualizado.');
+    }
+
+    private function crearCitaDesdeRequest(Request $request): string
+    {
+        $clienteSharedId = $request->input('client_shared_id');
+        $hora = $request->input('start_time') ?: now()->format('H:i');
+        $duracion = $request->input('duration_minutes');
+        $tipoCita = $request->filled('duration_minutes') ? 'scheduled' : 'quick';
+
+        if ($tipoCita === 'scheduled') {
+            $this->validarHorarioPermitido($hora);
+        }
+
+        $fecha = $request->input('appointment_date') ?: now()->toDateString();
+        $estado = $request->input('status') ?: ($tipoCita === 'quick' ? 'completed' : 'pending');
+
+        if ($tipoCita === 'scheduled') {
+            $this->validarHorarioDisponible($fecha, $hora, (int) $duracion);
+        }
+
+        if (! $clienteSharedId && $request->filled('client_name')) {
+            $clienteSharedId = $this->sharedIds->crear('client');
+
+            $this->writeService->insertar(Client::class, [
+                'shared_id' => $clienteSharedId,
+                'name' => $request->input('client_name'),
+                'phone' => $request->input('client_phone'),
+                'notes' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $sharedId = $this->sharedIds->crear('appt');
+        $usuario = Auth::user();
+
+        $this->writeService->insertar(Appointment::class, [
+            'shared_id' => $sharedId,
+            'user_shared_id' => $usuario?->shared_id,
+            'client_shared_id' => $clienteSharedId,
+            'haircut_style_shared_id' => $request->input('haircut_style_shared_id'),
+            'appointment_type' => $tipoCita,
+            'appointment_date' => $fecha,
+            'start_time' => $hora,
+            'duration_minutes' => $duracion,
+            'final_price' => $request->input('final_price', 0),
+            'status' => $estado,
+            'notes' => $request->input('notes'),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        if ($request->filled('original_image_temp_path') && $request->filled('generated_image_temp_path')) {
+            $this->writeService->insertar(HaircutPreview::class, [
+                'shared_id' => $this->sharedIds->crear('preview'),
+                'appointment_shared_id' => $sharedId,
+                'original_image_url' => $request->input('original_image_temp_path'),
+                'generated_image_url' => $request->input('generated_image_temp_path'),
+                'prompt' => $request->input('preview_prompt'),
+                'status' => 'completed',
+                'error_message' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        return $sharedId;
+    }
+
+    private function validarHorarioPermitido(string $hora): void
+    {
+        $horaInicioPermitido = '08:00';
+        $horaFinPermitido = '19:30';
+
+        if ($hora < $horaInicioPermitido || $hora > $horaFinPermitido) {
+            throw ValidationException::withMessages([
+                'start_time' => ["El servicio no se puede registrar. El horario de atencion permitido es de {$horaInicioPermitido} a {$horaFinPermitido}."],
+            ]);
+        }
+    }
+
+    private function validarHorarioDisponible(string $fecha, string $hora, int $duracion): void
+    {
+        $inicioNuevo = Carbon::parse($fecha . ' ' . $hora);
+        $finNuevo = (clone $inicioNuevo)->addMinutes($duracion);
+
+        $citas = Appointment::query()
+            ->whereDate('appointment_date', $fecha)
+            ->where('appointment_type', 'scheduled')
+            ->whereNotNull('duration_minutes')
+            ->where('status', '!=', 'cancelled')
+            ->get();
+
+        foreach ($citas as $cita) {
+            $inicioExistente = Carbon::parse($cita->appointment_date->toDateString() . ' ' . $cita->start_time);
+            $finExistente = (clone $inicioExistente)->addMinutes((int) $cita->duration_minutes);
+
+            if ($inicioNuevo->lt($finExistente) && $finNuevo->gt($inicioExistente)) {
+                throw ValidationException::withMessages([
+                    'start_time' => ['Ya existe una cita registrada en ese horario.'],
+                ]);
+            }
+        }
     }
 
     private function buscarCitas(?string $texto)

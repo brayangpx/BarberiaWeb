@@ -28,6 +28,7 @@ class UseActiveDatabaseConnection
         }
 
         config(['database.default' => $conexion]);
+        DB::purge($conexion);
         DB::setDefaultConnection($conexion);
 
         return $next($request);

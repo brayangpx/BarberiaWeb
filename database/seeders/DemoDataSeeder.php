@@ -69,6 +69,11 @@ class DemoDataSeeder extends Seeder
         for ($i = 1; $i <= 3000; $i++) {
             $esRapida = rand(1, 100) <= 40;
             $estado = $estados[array_rand($estados)];
+
+            if ($esRapida) {
+                $estado = 'completed';
+            }
+
             $numeroDia = $this->valorPonderado($diasConPeso);
             $hora = $this->valorPonderado($horasConPeso);
 
@@ -90,7 +95,7 @@ class DemoDataSeeder extends Seeder
                 'appointment_type' => $esRapida ? 'quick' : 'scheduled',
                 'appointment_date' => $fecha,
                 'start_time' => $hora,
-                'duration_minutes' => rand(20, 60),
+                'duration_minutes' => $esRapida ? null : rand(20, 60),
                 'final_price' => rand(100, 300),
                 'status' => $estado,
                 'notes' => null,
@@ -140,12 +145,16 @@ class DemoDataSeeder extends Seeder
             ['12:00', 'completed', true],
             ['14:00', 'pending', false],
             ['15:00', 'confirmed', true],
-            ['15:00', 'pending', false],
+            ['15:30', 'pending', false],
             ['16:00', 'confirmed', true],
-            ['16:00', 'pending', false],
+            ['16:30', 'pending', false],
         ];
 
         foreach ($citasDeHoy as [$hora, $estado, $esRapida]) {
+            if ($esRapida) {
+                $estado = 'completed';
+            }
+
             Appointment::query()->create([
                 'shared_id' => (string) Str::uuid(),
                 'user_shared_id' => $usuario->shared_id,
@@ -154,7 +163,7 @@ class DemoDataSeeder extends Seeder
                 'appointment_type' => $esRapida ? 'quick' : 'scheduled',
                 'appointment_date' => now()->toDateString(),
                 'start_time' => $hora,
-                'duration_minutes' => rand(25, 55),
+                'duration_minutes' => $esRapida ? null : rand(25, 55),
                 'final_price' => rand(120, 280),
                 'status' => $estado,
                 'notes' => 'Servicio demo de hoy',
