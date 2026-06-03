@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('shared_id')->unique();
             $table->string('name');
-            $table->string('phone', 30)->nullable();
+            $table->string('phone', 10)->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
         });

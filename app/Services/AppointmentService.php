@@ -19,6 +19,15 @@ class AppointmentService
     public function crearDesdeRequest(Request $request): string
     {
         $clienteSharedId = $request->input('client_shared_id');
+        $hora = $request->input('start_time') ?: now()->format('H:i');
+        $horaInicioPermitido = '08:00';
+        $horaFinPermitido    = '19:30';
+
+        if ($hora < $horaInicioPermitido || $hora > $horaFinPermitido) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'start_time' => ["El servicio no se puede registrar. El horario de atención permitido es de {$horaInicioPermitido} a {$horaFinPermitido}."],
+            ]);
+        }
 
         if (! $clienteSharedId && $request->filled('client_name')) {
             $clienteSharedId = $this->sharedIds->crear('client');
@@ -40,16 +49,6 @@ class AppointmentService
 
         $tipoCita = $esCitaDetallada ? 'scheduled' : 'quick';
         $fecha = $request->input('appointment_date') ?: now()->toDateString();
-        $hora = $request->input('start_time') ?: now()->format('H:i');
-
-        $horaInicioPermitido = '09:00';
-        $horaFinPermitido    = '16:00';
-
-        if ($hora < $horaInicioPermitido || $hora > $horaFinPermitido) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'start_time' => ["El servicio no se puede registrar. El horario de atención permitido es de {$horaInicioPermitido} a {$horaFinPermitido}."],
-            ]);
-        }
 
         $estado = $request->input('status') ?: ($tipoCita === 'quick' ? 'completed' : 'pending');
         $sharedId = $this->sharedIds->crear('appt');

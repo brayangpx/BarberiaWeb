@@ -59,9 +59,12 @@
                                 type="time"
                                 name="start_time"
                                 id="start_time"
-                                class="form-control"
+                                class="form-control @error('start_time') is-invalid @enderror"
                                 value="{{ old('start_time', now()->format('H:i')) }}"
                             >
+                            @error('start_time')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <div class="col-12 col-md-6">
@@ -142,10 +145,14 @@
                                 type="text"
                                 name="client_phone"
                                 id="client_phone"
-                                class="form-control"
+                                class="form-control @error('client_phone') is-invalid @enderror"
                                 value="{{ old('client_phone') }}"
+                                maxlength="10"
                                 placeholder="Opcional"
                             >
+                            @error('client_phone')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <div class="col-12">

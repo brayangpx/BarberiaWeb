@@ -8,6 +8,7 @@ use App\Models\HaircutStyle;
 use App\Services\AppointmentService;
 use App\Services\InternalNotificationService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class AppointmentController extends Controller
 {
@@ -58,9 +59,18 @@ class AppointmentController extends Controller
 
     public function store(Request $request)
     {
+        $reglasTelefonoCliente = ['nullable', 'max:10'];
+
+        if ($request->filled('client_name') && ! $request->filled('client_shared_id')) {
+            $reglasTelefonoCliente[] = Rule::unique('clients', 'phone');
+        }
+
         $request->validate([
             'final_price' => ['required', 'numeric', 'min:0'],
             'duration_minutes' => ['nullable', 'integer', 'min:1'],
+            'client_phone' => $reglasTelefonoCliente,
+        ], [
+            'client_phone.unique' => 'Este teléfono ya está registrado con otro cliente.',
         ]);
 
         $this->appointments->crearDesdeRequest($request);

@@ -12,7 +12,7 @@
         <div class="table-responsive">
             <table class="table table-bordered align-middle text-center tabla-mapa-calor mb-0">
                 <thead class="table-light">
-                    <tr>
+                    <tr> 
                         <th>Día / Hora</th>
 
                         @foreach ($horas as $hora)

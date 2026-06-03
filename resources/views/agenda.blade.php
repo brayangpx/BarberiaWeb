@@ -3,6 +3,29 @@
 @section('titulo', 'Agenda')
 
 @section('contenido')
+@php
+    $estadoSiguiente = [
+        'pending' => 'confirmed',
+        'confirmed' => 'completed',
+        'completed' => 'cancelled',
+        'cancelled' => 'pending',
+    ];
+
+    $estadoTexto = [
+        'pending' => 'Pendiente',
+        'confirmed' => 'Confirmada',
+        'completed' => 'Finalizada',
+        'cancelled' => 'Cancelada',
+    ];
+
+    $estadoClase = [
+        'pending' => 'bg-warning text-dark',
+        'confirmed' => 'bg-primary',
+        'completed' => 'bg-success',
+        'cancelled' => 'bg-danger',
+    ];
+@endphp
+
 <div class="row g-3">
     <div class="col-12 col-lg-8">
         <div class="card">
@@ -43,15 +66,13 @@
                                     </td>
                                     <td>${{ number_format($cita->final_price, 2) }}</td>
                                     <td>
-                                        @if ($cita->status === 'completed')
-                                            <span class="badge bg-success">Finalizada</span>
-                                        @elseif ($cita->status === 'confirmed')
-                                            <span class="badge bg-primary">Confirmada</span>
-                                        @elseif ($cita->status === 'cancelled')
-                                            <span class="badge bg-danger">Cancelada</span>
-                                        @else
-                                            <span class="badge bg-warning text-dark">Pendiente</span>
-                                        @endif
+                                        <form action="{{ route('citas.estado', $cita->shared_id) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <input type="hidden" name="status" value="{{ $estadoSiguiente[$cita->status] ?? 'pending' }}">
+                                            <button type="submit" class="badge border-0 {{ $estadoClase[$cita->status] ?? $estadoClase['pending'] }}">
+                                                {{ $estadoTexto[$cita->status] ?? $estadoTexto['pending'] }}
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
                             @empty
@@ -71,15 +92,13 @@
                             <div class="d-flex justify-content-between">
                                 <strong>{{ substr($cita->start_time, 0, 5) }}</strong>
 
-                                @if ($cita->status === 'completed')
-                                    <span class="badge bg-success">Finalizada</span>
-                                @elseif ($cita->status === 'confirmed')
-                                    <span class="badge bg-primary">Confirmada</span>
-                                @elseif ($cita->status === 'cancelled')
-                                    <span class="badge bg-danger">Cancelada</span>
-                                @else
-                                    <span class="badge bg-warning text-dark">Pendiente</span>
-                                @endif
+                                <form action="{{ route('citas.estado', $cita->shared_id) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <input type="hidden" name="status" value="{{ $estadoSiguiente[$cita->status] ?? 'pending' }}">
+                                    <button type="submit" class="badge border-0 {{ $estadoClase[$cita->status] ?? $estadoClase['pending'] }}">
+                                        {{ $estadoTexto[$cita->status] ?? $estadoTexto['pending'] }}
+                                    </button>
+                                </form>
                             </div>
 
                             <div class="mt-2">

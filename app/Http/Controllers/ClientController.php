@@ -7,6 +7,7 @@ use App\Services\FailoverWriteService;
 use App\Services\InternalNotificationService;
 use App\Services\SharedIdService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ClientController extends Controller
 {
@@ -39,7 +40,9 @@ class ClientController extends Controller
     {
         $request->validate([
             'name' => ['required', 'max:120'],
-            'phone' => ['nullable', 'max:30'],
+            'phone' => ['nullable', 'max:10', Rule::unique('clients', 'phone')],
+        ], [
+            'phone.unique' => 'Este teléfono ya está registrado con otro cliente.',
         ]);
 
         $this->writeService->insertar(Client::class, [

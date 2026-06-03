@@ -66,10 +66,13 @@
                             type="text"
                             name="name"
                             id="name"
-                            class="form-control"
+                            class="form-control @error('name') is-invalid @enderror"
                             value="{{ old('name') }}"
                             required
                         >
+                        @error('name')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div class="mb-3">
@@ -78,9 +81,13 @@
                             type="text"
                             name="phone"
                             id="phone"
-                            class="form-control"
+                            class="form-control @error('phone') is-invalid @enderror"
                             value="{{ old('phone') }}"
+                            maxlength="10"
                         >
+                        @error('phone')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100">
