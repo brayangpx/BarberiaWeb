@@ -41,6 +41,16 @@ class AppointmentService
         $tipoCita = $esCitaDetallada ? 'scheduled' : 'quick';
         $fecha = $request->input('appointment_date') ?: now()->toDateString();
         $hora = $request->input('start_time') ?: now()->format('H:i');
+
+        $horaInicioPermitido = '09:00';
+        $horaFinPermitido    = '16:00';
+
+        if ($hora < $horaInicioPermitido || $hora > $horaFinPermitido) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'start_time' => ["El servicio no se puede registrar. El horario de atención permitido es de {$horaInicioPermitido} a {$horaFinPermitido}."],
+            ]);
+        }
+
         $estado = $request->input('status') ?: ($tipoCita === 'quick' ? 'completed' : 'pending');
         $sharedId = $this->sharedIds->crear('appt');
         $usuario = Auth::user();

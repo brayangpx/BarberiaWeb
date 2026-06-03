@@ -32,11 +32,11 @@
                                 @php
                                     $cantidad = $matriz[$dia][$hora] ?? 0;
 
-                                    if ($cantidad >= 5) {
+                                    if ($cantidad >= 20) {
                                         $nivel = 'table-danger';
-                                    } elseif ($cantidad >= 2) {
+                                    } elseif ($cantidad >= 10) {
                                         $nivel = 'table-warning';
-                                    } elseif ($cantidad >= 1) {
+                                    } elseif ($cantidad >= 5) {
                                         $nivel = 'table-success';
                                     } else {
                                         $nivel = '';
