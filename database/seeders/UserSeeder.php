@@ -28,7 +28,7 @@ class UserSeeder extends Seeder
             'shared_id' => (string) Str::uuid(),
             'name' => 'Barbero principal',
             'phone' => '7151234567',
-            'password' => 'password',
+            'password' => '1234',
             'role' => 'barber',
         ]);
     }
