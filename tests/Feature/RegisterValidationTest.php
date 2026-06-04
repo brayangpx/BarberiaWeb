@@ -19,12 +19,9 @@ class RegisterValidationTest extends TestCase
         $this->withoutMiddleware(UseActiveDatabaseConnection::class);
 
         $user = User::factory()->create();
-        $corte = HaircutStyle::create([
-            'shared_id' => 'cut-test',
-            'name' => 'Corte prueba',
-            'description' => 'Corte para prueba',
-            'image_url' => null,
-        ]);
+        $corte = HaircutStyle::create(['shared_id' => 'cut-test',
+            'name' => 'Corte prueba', 'description' => 'Corte para prueba',
+            'image_url' => null]);
 
         $response = $this->actingAs($user)->post('/citas', [
             'haircut_style_shared_id' => $corte->shared_id,
@@ -42,12 +39,8 @@ class RegisterValidationTest extends TestCase
 
         $user = User::factory()->create();
 
-        Client::create([
-            'shared_id' => 'client-test',
-            'name' => 'Cliente uno',
-            'phone' => '7151234567',
-            'notes' => null,
-        ]);
+        Client::create(['shared_id' => 'client-test', 'name' => 'Cliente uno',
+            'phone' => '7151234567', 'notes' => null]);
 
         $response = $this->actingAs($user)->post('/clientes', [
             'name' => 'Cliente dos',
@@ -62,12 +55,9 @@ class RegisterValidationTest extends TestCase
         $this->withoutMiddleware(UseActiveDatabaseConnection::class);
 
         $user = User::factory()->create();
-        $corte = HaircutStyle::create([
-            'shared_id' => 'cut-test',
-            'name' => 'Corte prueba',
-            'description' => 'Corte para prueba',
-            'image_url' => null,
-        ]);
+        $corte = HaircutStyle::create(['shared_id' => 'cut-test',
+            'name' => 'Corte prueba', 'description' => 'Corte para prueba',
+            'image_url' => null]);
 
         Appointment::create([
             'shared_id' => 'appt-test',

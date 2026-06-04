@@ -17,11 +17,9 @@ class HaircutPreviewController extends Controller
         ]);
 
         $rutaOriginal = $request->file('preview_image')
-            ->store('previews/original', 'public');
+        ->store('previews/original', 'public');
 
-        $prompt = 'Modify the hairstyle of the person to look like '
-            . $request->input('haircut_name')
-            . ', keeping the face as similar as possible.';
+        $prompt = 'Modify the hairstyle of the person to look like ' .$request->input('haircut_name').', keeping the face as similar as possible.';
 
         $jobId = (string) Str::uuid();
 

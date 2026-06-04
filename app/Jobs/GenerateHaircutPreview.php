@@ -14,11 +14,8 @@ class GenerateHaircutPreview implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(
-        private string $jobId,
-        private string $rutaOriginal,
-        private string $prompt
-    ) {
+    public function __construct(private string $jobId, private string $rutaOriginal,
+        private string $prompt) {
     }
 
     public function handle(): void
@@ -120,10 +117,8 @@ class GenerateHaircutPreview implements ShouldQueue
         $imagenBase64 = $this->imagenOriginalBase64();
         $endpoint = "https://router.huggingface.co/{$provider}/{$providerModel}?_subdomain=queue";
 
-        return Http::timeout(120)
-            ->withToken($token)
-            ->acceptJson()
-            ->post($endpoint, [
+        return Http::timeout(120)->withToken($token)
+            ->acceptJson()->post($endpoint, [
                 'prompt' => $this->prompt,
                 'image_url' => $imagenBase64,
                 'image_urls' => [$imagenBase64],
@@ -149,10 +144,8 @@ class GenerateHaircutPreview implements ShouldQueue
         while ($estado !== 'COMPLETED' && $intentos < 60) {
             sleep(2);
 
-            $statusResponse = Http::timeout(60)
-                ->withToken($token)
-                ->acceptJson()
-                ->get($statusUrl);
+            $statusResponse = Http::timeout(60)->withToken($token)
+            ->acceptJson()->get($statusUrl);
 
             if (! $statusResponse->successful()) {
                 return $this->respuestaError($statusResponse);
@@ -179,10 +172,8 @@ class GenerateHaircutPreview implements ShouldQueue
             ];
         }
 
-        $resultado = Http::timeout(120)
-            ->withToken($token)
-            ->acceptJson()
-            ->get($resultUrl);
+        $resultado = Http::timeout(120)->withToken($token)
+        ->acceptJson()->get($resultUrl);
 
         if (! $resultado->successful()) {
             return $this->respuestaError($resultado);
@@ -211,10 +202,8 @@ class GenerateHaircutPreview implements ShouldQueue
 
     private function respuestaError($respuesta): array
     {
-        $mensajeApi = $respuesta->json('error')
-            ?? $respuesta->json('detail')
-            ?? $respuesta->json('message')
-            ?? $respuesta->body();
+        $mensajeApi = $respuesta->json('error') ?? $respuesta->json('detail')
+            ?? $respuesta->json('message') ?? $respuesta->body();
 
         return [
             'ok' => false,

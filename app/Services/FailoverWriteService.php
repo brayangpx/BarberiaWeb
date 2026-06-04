@@ -9,10 +9,8 @@ use Throwable;
 
 class FailoverWriteService
 {
-    public function __construct(
-        private SharedIdService $sharedIds,
-        private DatabaseHealthService $health
-    ) {
+    public function __construct(private SharedIdService $sharedIds,
+        private DatabaseHealthService $health) {
     }
 
     public function insertar(string $modelo, array $datos): void
@@ -21,9 +19,8 @@ class FailoverWriteService
         $conexionActiva = $this->health->conexionLectura();
 
         try {
-            $this->modeloEnConexion($modelo, $conexionActiva)
-                ->newQuery()
-                ->create($datos);
+            $this->modeloEnConexion($modelo, $conexionActiva)->newQuery()
+            ->create($datos);
         } catch (Throwable $e) {
             throw new RuntimeException('No hay bases de datos disponibles para guardar el registro.');
         }
@@ -46,10 +43,8 @@ class FailoverWriteService
         $conexionActiva = $this->health->conexionLectura();
 
         try {
-            $this->modeloEnConexion($modelo, $conexionActiva)
-                ->newQuery()
-                ->where('shared_id', $sharedId)
-                ->update($datos);
+            $this->modeloEnConexion($modelo, $conexionActiva)->newQuery()
+            ->where('shared_id', $sharedId)->update($datos);
         } catch (Throwable $e) {
             throw new RuntimeException('No hay bases de datos disponibles para actualizar el registro.');
         }
@@ -72,11 +67,9 @@ class FailoverWriteService
             return;
         }
 
-        $pendiente = PendingSync::on($conexionOrigen)
-            ->where('target_connection', $conexionDestino)
-            ->where('table_name', $tabla)
-            ->where('record_shared_id', $sharedIdRegistro)
-            ->first();
+        $pendiente = PendingSync::on($conexionOrigen)->where('target_connection', $conexionDestino)
+        ->where('table_name', $tabla)->where('record_shared_id', $sharedIdRegistro)
+        ->first();
 
         if ($pendiente) {
             $pendiente->update([

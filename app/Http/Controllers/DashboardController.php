@@ -24,27 +24,21 @@ class DashboardController extends Controller
     {
         $base = Appointment::query();
 
-        $ingresosTotales = (clone $base)
-            ->where('status', 'completed')
-            ->sum('final_price');
+        $ingresosTotales = (clone $base)->where('status', 'completed')
+        ->sum('final_price');
 
-        $serviciosRealizados = (clone $base)
-            ->where('status', 'completed')
-            ->count();
+        $serviciosRealizados = (clone $base)->where('status', 'completed')
+        ->count();
 
-        $serviciosRapidos = (clone $base)
-            ->where('appointment_type', 'quick')
-            ->count();
+        $serviciosRapidos = (clone $base)->where('appointment_type', 'quick')
+        ->count();
 
-        $clientesConcurrentes = (clone $base)
-            ->whereNotNull('client_shared_id')
-            ->where('status', 'completed')
-            ->distinct('client_shared_id')
+        $clientesConcurrentes = (clone $base)->whereNotNull('client_shared_id')
+            ->where('status', 'completed')->distinct('client_shared_id')
             ->count('client_shared_id');
 
-        $citasProgramadas = (clone $base)
-            ->where('appointment_type', 'scheduled')
-            ->count();
+        $citasProgramadas = (clone $base)->where('appointment_type', 'scheduled')
+        ->count();
 
         return [
             'ingresosTotales' => $ingresosTotales,
@@ -70,9 +64,8 @@ class DashboardController extends Controller
 
     private function horarioMasActivo(): array
     {
-        $citas = Appointment::query()
-            ->where('status', 'completed')
-            ->get();
+        $citas = Appointment::query()->where('status', 'completed')
+        ->get();
 
         $conteo = [];
 

@@ -25,9 +25,8 @@ class AuthController extends Controller
             return redirect()->route('agenda');
         }
 
-        return back()
-            ->withErrors(['phone' => 'Teléfono o contraseña incorrectos.'])
-            ->onlyInput('phone');
+        return back()->withErrors(['phone' => 'Teléfono o contraseña incorrectos.'])
+        ->onlyInput('phone');
     }
 
     public function logout(Request $request)

@@ -24,12 +24,9 @@ class AgendaController extends Controller
 
     private function citasDelDia(string $fecha)
     {
-        return Appointment::query()
-            ->with(['cliente', 'corte'])
-            ->whereDate('appointment_date', $fecha)
-            ->orderBy('start_time')
-            ->get()
-            ->map(function (Appointment $cita) {
+        return Appointment::query()->with(['cliente', 'corte'])
+            ->whereDate('appointment_date', $fecha)->orderBy('start_time')
+            ->get()->map(function (Appointment $cita) {
                 $cita->setAttribute('client_name', $cita->cliente?->name);
                 $cita->setAttribute('haircut_name', $cita->corte?->name);
 
@@ -39,9 +36,8 @@ class AgendaController extends Controller
 
     private function resumenDelDia(string $fecha): array
     {
-        $citas = Appointment::query()
-            ->whereDate('appointment_date', $fecha)
-            ->get();
+        $citas = Appointment::query()->whereDate('appointment_date', $fecha)
+        ->get();
 
         return [
             'ingresos' => $citas->where('status', 'completed')->sum('final_price'),

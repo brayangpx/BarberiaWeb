@@ -11,22 +11,17 @@ use Illuminate\Validation\Rule;
 
 class ClientController extends Controller
 {
-    public function __construct(
-        private FailoverWriteService $writeService,
-        private SharedIdService $sharedIds
-    ) {
+    public function __construct(private FailoverWriteService $writeService,
+        private SharedIdService $sharedIds) {
     }
 
     public function index(InternalNotificationService $notificationService)
     {
-        $clientes = Client::query()
-            ->withCount([
+        $clientes = Client::query()->withCount([
                 'citas as visitas' => function ($consulta) {
                     $consulta->where('status', 'completed');
                 },
-            ])
-            ->orderBy('name')
-            ->get();
+            ])->orderBy('name')->get();
 
         $notificaciones = $notificationService->ultimas(5);
         $totalNotificaciones = $notificaciones->count();

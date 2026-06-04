@@ -17,10 +17,8 @@ use Illuminate\Validation\ValidationException;
 
 class AppointmentController extends Controller
 {
-    public function __construct(
-        private FailoverWriteService $writeService,
-        private SharedIdService $sharedIds
-    ) {
+    public function __construct(private FailoverWriteService $writeService,
+        private SharedIdService $sharedIds) {
     }
 
     public function index(Request $request, InternalNotificationService $notificationService)
@@ -44,13 +42,11 @@ class AppointmentController extends Controller
  
     public function create(InternalNotificationService $notificationService)
     {
-        $clientes = Client::query()
-            ->orderBy('name')
-            ->get();
+        $clientes = Client::query()->orderBy('name')
+        ->get();
 
-        $cortes = HaircutStyle::query()
-            ->orderBy('name')
-            ->get();
+        $cortes = HaircutStyle::query()->orderBy('name')
+        ->get();
  
         $notificaciones = $notificationService->ultimas(5);
         $totalNotificaciones = $notificaciones->count();
@@ -69,9 +65,8 @@ class AppointmentController extends Controller
 
         $this->guardarCita($request);
 
-        return redirect()
-            ->route('agenda')
-            ->with('success', 'Servicio registrado correctamente.');
+        return redirect()->route('agenda')
+        ->with('success', 'Servicio registrado correctamente.');
     }
 
     public function updateStatus(Request $request, string $sharedId)
@@ -206,12 +201,10 @@ class AppointmentController extends Controller
         $inicioNuevo = Carbon::parse($fecha . ' ' . $hora);
         $finNuevo = (clone $inicioNuevo)->addMinutes($duracion);
 
-        $citas = Appointment::query()
-            ->whereDate('appointment_date', $fecha)
-            ->where('appointment_type', 'scheduled')
-            ->whereNotNull('duration_minutes')
-            ->where('status', '!=', 'cancelled')
-            ->get();
+        $citas = Appointment::query()->whereDate('appointment_date', $fecha)
+        ->where('appointment_type', 'scheduled')
+        ->whereNotNull('duration_minutes')
+        ->where('status', '!=', 'cancelled')->get();
 
         foreach ($citas as $cita) {
             $inicioExistente = Carbon::parse($cita->appointment_date->toDateString() . ' ' . $cita->start_time);
@@ -227,10 +220,8 @@ class AppointmentController extends Controller
 
     private function buscarCitas(?string $texto)
     {
-        $consulta = Appointment::query()
-            ->with(['cliente', 'corte'])
-            ->orderByDesc('appointment_date')
-            ->orderByDesc('start_time');
+        $consulta = Appointment::query()->with(['cliente', 'corte'])
+            ->orderByDesc('appointment_date')->orderByDesc('start_time');
 
         if ($texto) {
             $consulta->where(function ($subconsulta) use ($texto) {

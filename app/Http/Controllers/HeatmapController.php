@@ -13,13 +13,10 @@ class HeatmapController extends Controller
         $notificaciones = $notificationService->ultimas(5);
         $totalNotificaciones = $notificaciones->count();
 
-        return view('mapa-calor', array_merge(
-            $this->matrizMapaCalor(),
-            [
-                'notificaciones' => $notificaciones,
-                'totalNotificaciones' => $totalNotificaciones,
-            ]
-        ));
+        return view('mapa-calor', array_merge($this->matrizMapaCalor(), [
+            'notificaciones' => $notificaciones,
+            'totalNotificaciones' => $totalNotificaciones,
+        ]));
     }
 
     private function matrizMapaCalor(): array
@@ -34,9 +31,8 @@ class HeatmapController extends Controller
             }
         }
 
-        $citas = Appointment::query()
-            ->whereIn('status', ['completed', 'confirmed'])
-            ->get();
+        $citas = Appointment::query()->whereIn('status', ['completed', 'confirmed'])
+        ->get();
 
         foreach ($citas as $cita) {
             $numeroDia = Carbon::parse($cita->appointment_date)->dayOfWeekIso;

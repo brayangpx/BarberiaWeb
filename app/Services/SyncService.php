@@ -22,17 +22,13 @@ class SyncService
                 continue;
             }
 
-            $pendientes = PendingSync::on($conexionOrigen)
-                ->where('status', 'pending')
-                ->orderBy('id')
-                ->get();
+            $pendientes = PendingSync::on($conexionOrigen)->where('status', 'pending')
+            ->orderBy('id')->get();
 
             foreach ($pendientes as $pendiente) {
                 try {
-                    $registroOrigen = DB::connection($conexionOrigen)
-                        ->table($pendiente->table_name)
-                        ->where('shared_id', $pendiente->record_shared_id)
-                        ->first();
+                    $registroOrigen = DB::connection($conexionOrigen)->table($pendiente->table_name)
+                    ->where('shared_id', $pendiente->record_shared_id)->first();
 
                     if (! $registroOrigen) {
                         throw new RuntimeException('No se encontro el registro origen para sincronizar.');
@@ -41,12 +37,8 @@ class SyncService
                     $datos = (array) $registroOrigen;
                     unset($datos['id']);
 
-                    DB::connection($pendiente->target_connection)
-                        ->table($pendiente->table_name)
-                        ->updateOrInsert(
-                            ['shared_id' => $pendiente->record_shared_id],
-                            $datos
-                        );
+                    DB::connection($pendiente->target_connection)->table($pendiente->table_name)
+                    ->updateOrInsert(['shared_id' => $pendiente->record_shared_id], $datos);
 
                     $pendiente->update([
                         'status' => 'synced',

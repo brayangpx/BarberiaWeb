@@ -64,7 +64,8 @@ class DemoDataSeeder extends Seeder
             $hora = $this->horaDemo($numeroDia, $horasConPeso, $horasPicoPorDia);
             $fecha = $this->fechaDemo($numeroDia, $estado);
 
-            $this->crearCitaDemo($usuario, $cortes, $clientesGuardados, $fecha, $hora, $estado, $esRapida, null);
+            $this->crearCitaDemo($usuario, $cortes, $clientesGuardados,
+                $fecha, $hora, $estado, $esRapida, null);
         }
 
         $this->crearDatosParaMapaCalor($usuario, $cortes, $clientesGuardados);
@@ -122,7 +123,8 @@ class DemoDataSeeder extends Seeder
                     $estado = rand(1, 100) <= 85 ? 'completed' : 'confirmed';
                     $fecha = $this->fechaConDiaSemana($dia, false);
 
-                    $this->crearCitaDemo($usuario, $cortes, $clientesGuardados, $fecha, $hora, $estado, $esRapida, 'Dato demo para mapa de calor');
+                    $this->crearCitaDemo($usuario, $cortes, $clientesGuardados,
+                        $fecha, $hora, $estado, $esRapida, 'Dato demo para mapa de calor');
                 }
             }
         }
@@ -232,7 +234,8 @@ class DemoDataSeeder extends Seeder
                 $estado = 'completed';
             }
 
-            $this->crearCitaDemo($usuario, $cortes, $clientesGuardados, now()->toDateString(), $hora, $estado, $esRapida, 'Servicio demo de hoy');
+            $this->crearCitaDemo($usuario, $cortes, $clientesGuardados,
+                now()->toDateString(), $hora, $estado, $esRapida, 'Servicio demo de hoy');
         }
     }
 

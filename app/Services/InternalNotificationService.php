@@ -9,10 +9,8 @@ use Illuminate\Support\Collection;
 
 class InternalNotificationService
 {
-    public function __construct(
-        private FailoverWriteService $writeService,
-        private SharedIdService $sharedIds
-    ) {
+    public function __construct(private FailoverWriteService $writeService,
+        private SharedIdService $sharedIds) {
     }
 
     public function ultimas(int $limite = 5): Collection
@@ -20,25 +18,20 @@ class InternalNotificationService
         $this->cancelarCitasNotificadasVencidas();
         $this->generarDeCitasProximas();
 
-        return InternalNotification::query()
-            ->whereHas('cita', function ($consulta) {
+        return InternalNotification::query()->whereHas('cita', function ($consulta) {
                 $consulta->where('status', 'pending');
-            })
-            ->orderByDesc('generated_at')
-            ->limit($limite)
-            ->get();
+            })->orderByDesc('generated_at')
+            ->limit($limite)->get();
     }
 
     private function cancelarCitasNotificadasVencidas(): void
     {
         $ahora = now();
 
-        $notificaciones = InternalNotification::query()
-            ->with('cita')
+        $notificaciones = InternalNotification::query()->with('cita')
             ->whereHas('cita', function ($consulta) {
                 $consulta->whereNotIn('status', ['completed', 'cancelled']);
-            })
-            ->get();
+            })->get();
 
         foreach ($notificaciones as $notificacion) {
             $cita = $notificacion->cita;
@@ -61,10 +54,8 @@ class InternalNotificationService
         $ahora = now();
         $limite = now()->addMinutes(5);
 
-        $citas = Appointment::query()
-            ->with('cliente')
-            ->where('status', 'pending')
-            ->whereDoesntHave('notificacion')
+        $citas = Appointment::query()->with('cliente')
+            ->where('status', 'pending')->whereDoesntHave('notificacion')
             ->get();
 
         foreach ($citas as $cita) {
@@ -94,7 +85,7 @@ class InternalNotificationService
     {
         $fecha = $cita->appointment_date->toDateString();
         $termino = Carbon::parse($fecha . ' ' . $cita->start_time)
-            ->addMinutes((int) ($cita->duration_minutes ?: 0));
+        ->addMinutes((int) ($cita->duration_minutes ?: 0));
 
         return $termino->lt($ahora);
     }
