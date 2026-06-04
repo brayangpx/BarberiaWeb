@@ -106,7 +106,8 @@ body {
 }
 
 .tabla-mapa-calor {
-    min-width: 880px;
+    width: max-content;
+    min-width: 100%;
 }
 
 .tabla-mapa-calor th:first-child {
@@ -128,17 +129,63 @@ body {
 }
 
 @media (max-width: 767.98px) {
-    .tabla-mapa-calor {
+    .pagina-mapa-calor .contenido-principal {
+        width: 100%;
+        min-width: 0;
+        max-width: 100vw;
+        overflow-x: hidden;
+    }
+
+    .pagina-mapa-calor .contenido-principal .container-fluid {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    .pagina-mapa-calor .contenido-principal .container-fluid > .d-flex.justify-content-between {
+        gap: 8px;
+        flex-wrap: nowrap;
+    }
+
+    .pagina-mapa-calor .contenido-principal .container-fluid > .d-flex.justify-content-between h4 {
+        flex: 1;
+        min-width: 0;
+        font-size: 1rem;
+        white-space: nowrap;
+    }
+
+    .pagina-mapa-calor .contenido-principal .container-fluid > .d-flex.justify-content-between > div {
+        flex-shrink: 0;
+    }
+
+    .pagina-mapa-calor .contenido-principal .btn-sm {
+        padding: 4px 7px;
         font-size: 12px;
     }
 
-    .tabla-mapa-calor th,
-    .tabla-mapa-calor td {
-        min-width: 58px;
-        padding: 8px 6px;
+    .pagina-mapa-calor .card {
+        max-width: 100%;
+        overflow: hidden;
     }
 
-    .tabla-mapa-calor th:first-child {
-        min-width: 96px;
+    .pagina-mapa-calor .table-responsive {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .pagina-mapa-calor .tabla-mapa-calor {
+        font-size: 12px;
+        min-width: 680px;
+    }
+
+    .pagina-mapa-calor .tabla-mapa-calor th,
+    .pagina-mapa-calor .tabla-mapa-calor td {
+        min-width: 48px;
+        padding: 8px 5px;
+    }
+
+    .pagina-mapa-calor .tabla-mapa-calor th:first-child {
+        min-width: 82px;
     }
 }
