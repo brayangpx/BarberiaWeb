@@ -37,7 +37,6 @@ class FailoverWriteService
                 $datos['shared_id'] ?? null
             );
         } catch (Throwable $e) {
-            report($e);
         }
     }
 
@@ -64,7 +63,6 @@ class FailoverWriteService
                 $sharedId
             );
         } catch (Throwable $e) {
-            report($e);
         }
     }
 

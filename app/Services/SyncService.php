@@ -54,7 +54,6 @@ class SyncService
 
                     $sincronizados++;
                 } catch (Throwable $e) {
-                    report($e);
                 }
             }
         }
