@@ -53,34 +53,11 @@ class DemoDataSeeder extends Seeder
     {
         $estados = ['completed', 'completed', 'completed', 'confirmed', 'pending', 'cancelled'];
 
-        $diasConPeso = [
-            1 => 7,
-            2 => 8,
-            3 => 10,
-            4 => 14,
-            5 => 26,
-            6 => 28,
-            7 => 7,
-        ];
+        $diasConPeso = $this->pesosDias();
+        $horasConPeso = $this->pesosHoras();
+        $horasPicoPorDia = $this->horasPicoPorDia();
 
-        $horasConPeso = [
-            '09:00' => 6,
-            '10:00' => 8,
-            '11:00' => 10,
-            '12:00' => 12,
-            '13:00' => 7,
-            '14:00' => 12,
-            '15:00' => 22,
-            '16:00' => 23,
-        ];
-
-        $horasPicoPorDia = [
-            5 => ['15:00', '16:00'],
-            6 => ['11:00', '12:00', '15:00', '16:00'],
-            4 => ['14:00', '15:00'],
-        ];
-
-        for ($i = 1; $i <= 3000; $i++) {
+        for ($i = 1; $i <= 2200; $i++) {
             $esRapida = rand(1, 100) <= 40;
             $estado = $this->estadoDemo($estados, $esRapida);
             $numeroDia = $this->valorPonderado($diasConPeso);
@@ -89,6 +66,94 @@ class DemoDataSeeder extends Seeder
 
             $this->crearCitaDemo($usuario, $cortes, $clientesGuardados, $fecha, $hora, $estado, $esRapida, null);
         }
+
+        $this->crearDatosParaMapaCalor($usuario, $cortes, $clientesGuardados);
+    }
+
+    private function pesosDias(): array
+    {
+        return [
+            1 => 8,
+            2 => 10,
+            3 => 12,
+            4 => 16,
+            5 => 26,
+            6 => 30,
+            7 => 8,
+        ];
+    }
+
+    private function pesosHoras(): array
+    {
+        return [
+            '08:00' => 4,
+            '09:00' => 7,
+            '10:00' => 9,
+            '11:00' => 12,
+            '12:00' => 12,
+            '13:00' => 8,
+            '14:00' => 13,
+            '15:00' => 22,
+            '16:00' => 24,
+            '17:00' => 18,
+            '18:00' => 11,
+            '19:00' => 6,
+        ];
+    }
+
+    private function horasPicoPorDia(): array
+    {
+        return [
+            4 => ['14:00', '15:00', '16:00'],
+            5 => ['15:00', '16:00', '17:00'],
+            6 => ['10:00', '11:00', '12:00', '15:00', '16:00', '17:00'],
+        ];
+    }
+
+    private function crearDatosParaMapaCalor(User $usuario, $cortes, array $clientesGuardados): void
+    {
+        $horas = array_keys($this->pesosHoras());
+
+        for ($dia = 1; $dia <= 7; $dia++) {
+            foreach ($horas as $hora) {
+                $cantidad = $this->cantidadMapaCalor($dia, $hora);
+
+                for ($i = 1; $i <= $cantidad; $i++) {
+                    $esRapida = rand(1, 100) <= 35;
+                    $estado = rand(1, 100) <= 85 ? 'completed' : 'confirmed';
+                    $fecha = $this->fechaConDiaSemana($dia, false);
+
+                    $this->crearCitaDemo($usuario, $cortes, $clientesGuardados, $fecha, $hora, $estado, $esRapida, 'Dato demo para mapa de calor');
+                }
+            }
+        }
+    }
+
+    private function cantidadMapaCalor(int $dia, string $hora): int
+    {
+        $base = 3;
+
+        if (in_array($hora, ['10:00', '11:00', '12:00', '14:00', '18:00'], true)) {
+            $base = 7;
+        }
+
+        if (in_array($hora, ['15:00', '16:00', '17:00'], true)) {
+            $base = 12;
+        }
+
+        if (in_array($dia, [5, 6], true)) {
+            $base += 7;
+        }
+
+        if ($dia === 6 && in_array($hora, ['11:00', '12:00', '15:00', '16:00'], true)) {
+            $base += 10;
+        }
+
+        if ($dia === 7 || $hora === '08:00' || $hora === '19:00') {
+            $base = max(2, $base - 5);
+        }
+
+        return $base + rand(0, 3);
     }
 
     private function estadoDemo(array $estados, bool $esRapida): string
