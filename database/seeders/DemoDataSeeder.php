@@ -20,6 +20,15 @@ class DemoDataSeeder extends Seeder
             return;
         }
 
+        $clientesGuardados = $this->crearClientesDemo();
+
+        $this->crearHistorialDemo($usuario, $cortes, $clientesGuardados);
+
+        $this->crearCitasDeHoy($usuario, $cortes, $clientesGuardados);
+    }
+
+    private function crearClientesDemo(): array
+    {
         $clientesGuardados = [];
 
         for ($i = 1; $i <= 120; $i++) {
@@ -37,6 +46,11 @@ class DemoDataSeeder extends Seeder
             $clientesGuardados[] = $sharedId;
         }
 
+        return $clientesGuardados;
+    }
+
+    private function crearHistorialDemo(User $usuario, $cortes, array $clientesGuardados): void
+    {
         $estados = ['completed', 'completed', 'completed', 'confirmed', 'pending', 'cancelled'];
 
         $diasConPeso = [
@@ -68,43 +82,42 @@ class DemoDataSeeder extends Seeder
 
         for ($i = 1; $i <= 3000; $i++) {
             $esRapida = rand(1, 100) <= 40;
-            $estado = $estados[array_rand($estados)];
-
-            if ($esRapida) {
-                $estado = 'completed';
-            }
-
+            $estado = $this->estadoDemo($estados, $esRapida);
             $numeroDia = $this->valorPonderado($diasConPeso);
-            $hora = $this->valorPonderado($horasConPeso);
+            $hora = $this->horaDemo($numeroDia, $horasConPeso, $horasPicoPorDia);
+            $fecha = $this->fechaDemo($numeroDia, $estado);
 
-            if (isset($horasPicoPorDia[$numeroDia]) && rand(1, 100) <= 70) {
-                $hora = $horasPicoPorDia[$numeroDia][array_rand($horasPicoPorDia[$numeroDia])];
-            }
+            $this->crearCitaDemo($usuario, $cortes, $clientesGuardados, $fecha, $hora, $estado, $esRapida, null);
+        }
+    }
 
-            $fecha = $this->fechaConDiaSemana($numeroDia, false);
-
-            if ($estado === 'pending' || $estado === 'confirmed') {
-                $fecha = $this->fechaConDiaSemana($numeroDia, true);
-            }
-
-            Appointment::query()->create([
-                'shared_id' => (string) Str::uuid(),
-                'user_shared_id' => $usuario->shared_id,
-                'client_shared_id' => $esRapida ? null : $clientesGuardados[array_rand($clientesGuardados)],
-                'haircut_style_shared_id' => $cortes->random()->shared_id,
-                'appointment_type' => $esRapida ? 'quick' : 'scheduled',
-                'appointment_date' => $fecha,
-                'start_time' => $hora,
-                'duration_minutes' => $esRapida ? null : rand(20, 60),
-                'final_price' => rand(100, 300),
-                'status' => $estado,
-                'notes' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+    private function estadoDemo(array $estados, bool $esRapida): string
+    {
+        if ($esRapida) {
+            return 'completed';
         }
 
-        $this->crearCitasDeHoy($usuario, $cortes, $clientesGuardados);
+        return $estados[array_rand($estados)];
+    }
+
+    private function horaDemo(int $numeroDia, array $horasConPeso, array $horasPicoPorDia): string
+    {
+        $hora = $this->valorPonderado($horasConPeso);
+
+        if (isset($horasPicoPorDia[$numeroDia]) && rand(1, 100) <= 70) {
+            $hora = $horasPicoPorDia[$numeroDia][array_rand($horasPicoPorDia[$numeroDia])];
+        }
+
+        return $hora;
+    }
+
+    private function fechaDemo(int $numeroDia, string $estado): string
+    {
+        if ($estado === 'pending' || $estado === 'confirmed') {
+            return $this->fechaConDiaSemana($numeroDia, true);
+        }
+
+        return $this->fechaConDiaSemana($numeroDia, false);
     }
 
     private function valorPonderado(array $opciones): int|string
@@ -155,21 +168,26 @@ class DemoDataSeeder extends Seeder
                 $estado = 'completed';
             }
 
-            Appointment::query()->create([
-                'shared_id' => (string) Str::uuid(),
-                'user_shared_id' => $usuario->shared_id,
-                'client_shared_id' => $esRapida ? null : $clientesGuardados[array_rand($clientesGuardados)],
-                'haircut_style_shared_id' => $cortes->random()->shared_id,
-                'appointment_type' => $esRapida ? 'quick' : 'scheduled',
-                'appointment_date' => now()->toDateString(),
-                'start_time' => $hora,
-                'duration_minutes' => $esRapida ? null : rand(25, 55),
-                'final_price' => rand(120, 280),
-                'status' => $estado,
-                'notes' => 'Servicio demo de hoy',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            $this->crearCitaDemo($usuario, $cortes, $clientesGuardados, now()->toDateString(), $hora, $estado, $esRapida, 'Servicio demo de hoy');
         }
+    }
+
+    private function crearCitaDemo(User $usuario, $cortes, array $clientesGuardados, string $fecha, string $hora, string $estado, bool $esRapida, ?string $nota): void
+    {
+        Appointment::query()->create([
+            'shared_id' => (string) Str::uuid(),
+            'user_shared_id' => $usuario->shared_id,
+            'client_shared_id' => $esRapida ? null : $clientesGuardados[array_rand($clientesGuardados)],
+            'haircut_style_shared_id' => $cortes->random()->shared_id,
+            'appointment_type' => $esRapida ? 'quick' : 'scheduled',
+            'appointment_date' => $fecha,
+            'start_time' => $hora,
+            'duration_minutes' => $esRapida ? null : rand(20, 60),
+            'final_price' => rand(100, 300),
+            'status' => $estado,
+            'notes' => $nota,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 }

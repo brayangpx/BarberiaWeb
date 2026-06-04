@@ -15,11 +15,13 @@ return new class extends Migration
             $table->string('table_name');
             $table->string('operation');
             $table->string('record_shared_id')->nullable()->index();
-            $table->json('payload');
             $table->string('status', 30)->default('pending');
-            $table->unsignedInteger('attempts')->default(0);
-            $table->text('error_message')->nullable();
             $table->timestamps();
+
+            $table->unique(
+                ['target_connection', 'table_name', 'record_shared_id'],
+                'pending_syncs_unique_record'
+            );
         });
     }
 

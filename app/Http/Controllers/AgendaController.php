@@ -10,10 +10,23 @@ class AgendaController extends Controller
     public function index(InternalNotificationService $notificationService)
     {
         $hoy = now()->toDateString();
+        $notificaciones = $notificationService->ultimas(5);
+        $totalNotificaciones = $notificaciones->count();
 
-        $citas = Appointment::query()
+        return view('agenda', [
+            'citas' => $this->citasDelDia($hoy),
+            'resumen' => $this->resumenDelDia($hoy),
+            'hoy' => $hoy,
+            'notificaciones' => $notificaciones,
+            'totalNotificaciones' => $totalNotificaciones,
+        ]);
+    }
+
+    private function citasDelDia(string $fecha)
+    {
+        return Appointment::query()
             ->with(['cliente', 'corte'])
-            ->whereDate('appointment_date', $hoy)
+            ->whereDate('appointment_date', $fecha)
             ->orderBy('start_time')
             ->get()
             ->map(function (Appointment $cita) {
@@ -22,35 +35,19 @@ class AgendaController extends Controller
 
                 return $cita;
             });
+    }
 
-        $baseResumen = Appointment::query()->whereDate('appointment_date', $hoy);
+    private function resumenDelDia(string $fecha): array
+    {
+        $citas = Appointment::query()
+            ->whereDate('appointment_date', $fecha)
+            ->get();
 
-        $resumen = [
-            'ingresos' => (clone $baseResumen)
-                ->where('status', 'completed')
-                ->sum('final_price'),
-
-            'servicios' => (clone $baseResumen)
-                ->count(),
-
-            'rapidos' => (clone $baseResumen)
-                ->where('appointment_type', 'quick')
-                ->count(),
-
-            'conCliente' => (clone $baseResumen)
-                ->whereNotNull('client_shared_id')
-                ->count(),
+        return [
+            'ingresos' => $citas->where('status', 'completed')->sum('final_price'),
+            'servicios' => $citas->count(),
+            'rapidos' => $citas->where('appointment_type', 'quick')->count(),
+            'conCliente' => $citas->whereNotNull('client_shared_id')->count(),
         ];
-
-        $notificaciones = $notificationService->ultimas(5);
-        $totalNotificaciones = $notificaciones->count();
-
-        return view('agenda', [
-            'citas' => $citas,
-            'resumen' => $resumen,
-            'hoy' => $hoy,
-            'notificaciones' => $notificaciones,
-            'totalNotificaciones' => $totalNotificaciones,
-        ]);
     }
 }

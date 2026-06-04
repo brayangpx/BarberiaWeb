@@ -19,16 +19,27 @@ class HaircutStyleSeeder extends Seeder
         ];
 
         foreach ($cortes as $corte) {
-            HaircutStyle::query()->updateOrCreate(
-                ['name' => $corte['name']],
-                [
-                    'shared_id' => (string) Str::uuid(),
+            $corteGuardado = HaircutStyle::query()
+                ->where('name', $corte['name'])
+                ->first();
+
+            if ($corteGuardado) {
+                $corteGuardado->update([
                     'description' => $corte['description'],
                     'image_url' => null,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]
-            );
+                ]);
+
+                continue;
+            }
+
+            HaircutStyle::query()->create([
+                'shared_id' => (string) Str::uuid(),
+                'name' => $corte['name'],
+                'description' => $corte['description'],
+                'image_url' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
         }
     }
 }

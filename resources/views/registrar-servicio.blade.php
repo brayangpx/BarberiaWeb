@@ -7,6 +7,7 @@
     action="{{ route('citas.store') }}"
     method="POST"
     data-preview-url="{{ route('citas.previsualizacion', [], false) }}"
+    data-preview-status-url="/citas/previsualizacion-temporal"
     data-csrf-token="{{ csrf_token() }}"
 >
     @csrf
@@ -248,4 +249,3 @@
     <script src="{{ asset('js/registrar-servicio.js') }}"></script>
 
 @endsection
-

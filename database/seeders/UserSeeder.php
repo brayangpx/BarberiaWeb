@@ -10,14 +10,26 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::query()->updateOrCreate(
-            ['phone' => '7151234567'],
-            [
-                'shared_id' => (string) Str::uuid(),
+        $usuario = User::query()
+            ->where('phone', '7151234567')
+            ->first();
+
+        if ($usuario) {
+            $usuario->update([
                 'name' => 'Barbero principal',
                 'password' => 'password',
                 'role' => 'barber',
-            ]
-        );
+            ]);
+
+            return;
+        }
+
+        User::query()->create([
+            'shared_id' => (string) Str::uuid(),
+            'name' => 'Barbero principal',
+            'phone' => '7151234567',
+            'password' => 'password',
+            'role' => 'barber',
+        ]);
     }
 }

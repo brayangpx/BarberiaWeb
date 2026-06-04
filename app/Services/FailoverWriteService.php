@@ -15,13 +15,15 @@ class FailoverWriteService
     ) {
     }
 
-    public function insertar(string $modeloOTabla, array $datos): void
+    public function insertar(string $modelo, array $datos): void
     {
-        $tabla = $this->nombreTabla($modeloOTabla);
+        $tabla = $this->nombreTabla($modelo);
         $conexionActiva = $this->health->conexionLectura();
 
         try {
-            $this->nuevoModelo($modeloOTabla, $conexionActiva)->newQuery()->create($datos);
+            $this->modeloEnConexion($modelo, $conexionActiva)
+                ->newQuery()
+                ->create($datos);
         } catch (Throwable $e) {
             throw new RuntimeException('No hay bases de datos disponibles para guardar el registro.');
         }
@@ -32,21 +34,20 @@ class FailoverWriteService
                 $this->otraConexion($conexionActiva),
                 $tabla,
                 'insert',
-                $datos['shared_id'] ?? null,
-                $datos
+                $datos['shared_id'] ?? null
             );
         } catch (Throwable $e) {
             report($e);
         }
     }
 
-    public function actualizar(string $modeloOTabla, string $sharedId, array $datos): void
+    public function actualizar(string $modelo, string $sharedId, array $datos): void
     {
-        $tabla = $this->nombreTabla($modeloOTabla);
+        $tabla = $this->nombreTabla($modelo);
         $conexionActiva = $this->health->conexionLectura();
 
         try {
-            $this->nuevoModelo($modeloOTabla, $conexionActiva)
+            $this->modeloEnConexion($modelo, $conexionActiva)
                 ->newQuery()
                 ->where('shared_id', $sharedId)
                 ->update($datos);
@@ -60,17 +61,31 @@ class FailoverWriteService
                 $this->otraConexion($conexionActiva),
                 $tabla,
                 'update',
-                $sharedId,
-                $datos
+                $sharedId
             );
         } catch (Throwable $e) {
             report($e);
         }
     }
 
-    private function registrarPendiente(string $conexionOrigen, string $conexionDestino, string $tabla, string $operacion, ?string $sharedIdRegistro, array $datos): void
+    private function registrarPendiente(string $conexionOrigen, string $conexionDestino, string $tabla, string $operacion, ?string $sharedIdRegistro): void
     {
-        if ($tabla === 'pending_syncs') {
+        if ($tabla === 'pending_syncs' || ! $sharedIdRegistro) {
+            return;
+        }
+
+        $pendiente = PendingSync::on($conexionOrigen)
+            ->where('target_connection', $conexionDestino)
+            ->where('table_name', $tabla)
+            ->where('record_shared_id', $sharedIdRegistro)
+            ->first();
+
+        if ($pendiente) {
+            $pendiente->update([
+                'operation' => $operacion,
+                'status' => 'pending',
+            ]);
+
             return;
         }
 
@@ -80,33 +95,24 @@ class FailoverWriteService
             'table_name' => $tabla,
             'operation' => $operacion,
             'record_shared_id' => $sharedIdRegistro,
-            'payload' => $datos,
             'status' => 'pending',
-            'attempts' => 0,
-            'error_message' => null,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
     }
 
-    private function nuevoModelo(string $modeloOTabla, string $conexion): Model
+    private function modeloEnConexion(string $modelo, string $conexion): Model
     {
-        if (class_exists($modeloOTabla) && is_subclass_of($modeloOTabla, Model::class)) {
-            return (new $modeloOTabla)->setConnection($conexion);
+        if (! class_exists($modelo) || ! is_subclass_of($modelo, Model::class)) {
+            throw new RuntimeException('El modelo indicado no es valido.');
         }
 
-        return (new class extends Model {
-            protected $guarded = [];
-        })->setTable($modeloOTabla)->setConnection($conexion);
+        return (new $modelo)->setConnection($conexion);
     }
 
-    private function nombreTabla(string $modeloOTabla): string
+    private function nombreTabla(string $modelo): string
     {
-        if (class_exists($modeloOTabla) && is_subclass_of($modeloOTabla, Model::class)) {
-            return (new $modeloOTabla)->getTable();
-        }
-
-        return $modeloOTabla;
+        return (new $modelo)->getTable();
     }
 
     private function otraConexion(string $conexion): string

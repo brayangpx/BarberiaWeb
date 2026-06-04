@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\GenerateHaircutPreview;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Throwable;
 
 class HaircutPreviewController extends Controller
 {
@@ -24,172 +23,56 @@ class HaircutPreviewController extends Controller
             . $request->input('haircut_name')
             . ', keeping the face as similar as possible.';
 
-        $resultado = $this->generarImagen($rutaOriginal, $prompt);
+        $jobId = (string) Str::uuid();
+
+        Storage::disk('local')->put(
+            $this->rutaEstado($jobId),
+            json_encode([
+                'status' => 'pending',
+                'original_image_temp_path' => $rutaOriginal,
+                'generated_image_temp_path' => null,
+                'preview_prompt' => $prompt,
+                'error' => null,
+            ], JSON_PRETTY_PRINT)
+        );
+
+        GenerateHaircutPreview::dispatch($jobId, $rutaOriginal, $prompt);
 
         return response()->json([
             'ok' => true,
-            'original_image_temp_path' => $rutaOriginal,
-            'generated_image_temp_path' => $resultado['path'],
-            'generated_image_url' => asset('storage/' . $resultado['path']),
-            'preview_prompt' => $prompt,
-            'error' => null,
+            'job_id' => $jobId,
+            'status' => 'pending',
         ]);
     }
 
-    private function generarImagen(string $rutaOriginal, string $prompt): array
+    public function status(string $jobId)
     {
-        $token = config('services.huggingface.token');
-        $provider = config('services.huggingface.provider', 'fal-ai');
-        $providerModel = config('services.huggingface.provider_model', 'fal-ai/flux-2/edit');
+        $rutaEstado = $this->rutaEstado($jobId);
 
-        if (! $token || ! $provider || ! $providerModel) {
-            return [
+        if (! Storage::disk('local')->exists($rutaEstado)) {
+            return response()->json([
                 'ok' => false,
-                'path' => $rutaOriginal,
-                'error' => 'No se configuró correctamente Hugging Face.',
-            ];
+                'status' => 'missing',
+                'error' => 'No se encontro la previsualizacion solicitada.',
+            ], 404);
         }
 
-        try {
-            $contenido = Storage::disk('public')->get($rutaOriginal);
+        $datos = json_decode(Storage::disk('local')->get($rutaEstado), true) ?: [];
+        $rutaGenerada = $datos['generated_image_temp_path'] ?? null;
 
-            $mime = finfo_buffer(finfo_open(FILEINFO_MIME_TYPE), $contenido) ?: 'image/jpeg';
-            $imagenBase64 = 'data:' . $mime . ';base64,' . base64_encode($contenido);
-
-            $endpoint = "https://router.huggingface.co/{$provider}/{$providerModel}?_subdomain=queue";
-
-            $respuesta = Http::timeout(120)
-                ->withToken($token)
-                ->acceptJson()
-                ->post($endpoint, [
-                    'prompt' => $prompt,
-                    'image_url' => $imagenBase64,
-                    'image_urls' => [$imagenBase64],
-                    'output_format' => 'png',
-                ]);
-
-            if (! $respuesta->successful()) {
-                return $this->respuestaError($respuesta, $rutaOriginal);
-            }
-
-            $datos = $respuesta->json();
-
-            if (! isset($datos['response_url'])) {
-                return [
-                    'ok' => false,
-                    'path' => $rutaOriginal,
-                    'error' => 'Hugging Face no devolvió una URL de respuesta.',
-                ];
-            }
-
-            $rutaRespuesta = parse_url($datos['response_url'], PHP_URL_PATH);
-
-            if (! $rutaRespuesta) {
-                return [
-                    'ok' => false,
-                    'path' => $rutaOriginal,
-                    'error' => 'No se pudo leer la ruta de respuesta de Hugging Face.',
-                ];
-            }
-
-            $baseRouter = "https://router.huggingface.co/{$provider}";
-            $statusUrl = $baseRouter . $rutaRespuesta . '/status?_subdomain=queue';
-            $resultUrl = $baseRouter . $rutaRespuesta . '?_subdomain=queue';
-
-            $estado = $datos['status'] ?? 'IN_QUEUE';
-            $intentos = 0;
-
-            while ($estado !== 'COMPLETED' && $intentos < 60) {
-                sleep(2);
-
-                $statusResponse = Http::timeout(60)
-                    ->withToken($token)
-                    ->acceptJson()
-                    ->get($statusUrl);
-
-                if (! $statusResponse->successful()) {
-                    return $this->respuestaError($statusResponse, $rutaOriginal);
-                }
-
-                $estado = $statusResponse->json('status') ?? $estado;
-
-                if ($estado === 'FAILED') {
-                    return [
-                        'ok' => false,
-                        'path' => $rutaOriginal,
-                        'error' => 'La generación falló en Hugging Face.',
-                    ];
-                }
-
-                $intentos++;
-            }
-
-            if ($estado !== 'COMPLETED') {
-                return [
-                    'ok' => false,
-                    'path' => $rutaOriginal,
-                    'error' => 'La generación tardó demasiado tiempo.',
-                ];
-            }
-
-            $resultado = Http::timeout(120)
-                ->withToken($token)
-                ->acceptJson()
-                ->get($resultUrl);
-
-            if (! $resultado->successful()) {
-                return $this->respuestaError($resultado, $rutaOriginal);
-            }
-
-            $imagenUrl = $resultado->json('images.0.url');
-
-            if (! $imagenUrl) {
-                return [
-                    'ok' => false,
-                    'path' => $rutaOriginal,
-                    'error' => 'Hugging Face no devolvió una imagen generada.',
-                ];
-            }
-
-            $imagenGenerada = Http::timeout(120)->get($imagenUrl);
-
-            if (! $imagenGenerada->successful()) {
-                return [
-                    'ok' => false,
-                    'path' => $rutaOriginal,
-                    'error' => 'No se pudo descargar la imagen generada.',
-                ];
-            }
-
-            $rutaGenerada = 'previews/generated/' . uniqid('preview_', true) . '.png';
-
-            Storage::disk('public')->put($rutaGenerada, $imagenGenerada->body());
-
-            return [
-                'ok' => true,
-                'path' => $rutaGenerada,
-                'error' => null,
-            ];
-        } catch (Throwable $e) {
-            return [
-                'ok' => false,
-                'path' => $rutaOriginal,
-                'error' => $e->getMessage(),
-            ];
-        }
+        return response()->json([
+            'ok' => ($datos['status'] ?? null) !== 'failed',
+            'status' => $datos['status'] ?? 'pending',
+            'original_image_temp_path' => $datos['original_image_temp_path'] ?? null,
+            'generated_image_temp_path' => $rutaGenerada,
+            'generated_image_url' => $rutaGenerada ? '/storage/' . $rutaGenerada : null,
+            'preview_prompt' => $datos['preview_prompt'] ?? null,
+            'error' => $datos['error'] ?? null,
+        ]);
     }
 
-    private function respuestaError($respuesta, string $rutaOriginal): array
+    private function rutaEstado(string $jobId): string
     {
-        $mensajeApi = $respuesta->json('error')
-            ?? $respuesta->json('detail')
-            ?? $respuesta->json('message')
-            ?? $respuesta->body();
-
-        return [
-            'ok' => false,
-            'path' => $rutaOriginal,
-            'error' => 'Hugging Face respondió HTTP ' . $respuesta->status() . ': ' . Str::limit($mensajeApi, 300),
-        ];
+        return 'preview-jobs/' . $jobId . '.json';
     }
 }

@@ -32,16 +32,4 @@ class DatabaseHealthService
         throw new RuntimeException('No hay bases de datos disponibles.');
     }
 
-    public function conexionesDisponibles(): array
-    {
-        $conexiones = [];
-
-        foreach (['mysql', 'mysql_secondary'] as $conexion) {
-            if ($this->estaDisponible($conexion)) {
-                $conexiones[] = $conexion;
-            }
-        }
-
-        return $conexiones;
-    }
 }

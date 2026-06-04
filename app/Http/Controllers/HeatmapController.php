@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Appointment;
 use App\Services\InternalNotificationService;
+use Carbon\Carbon;
 
 class HeatmapController extends Controller
 {
@@ -38,7 +39,7 @@ class HeatmapController extends Controller
             ->get();
 
         foreach ($citas as $cita) {
-            $numeroDia = (int) date('N', strtotime($cita->appointment_date));
+            $numeroDia = Carbon::parse($cita->appointment_date)->dayOfWeekIso;
             $dia = $dias[$numeroDia - 1] ?? null;
             $hora = substr($cita->start_time, 0, 2) . ':00';
 

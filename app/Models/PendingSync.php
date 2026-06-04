@@ -11,17 +11,8 @@ use Illuminate\Database\Eloquent\Model;
     'table_name',
     'operation',
     'record_shared_id',
-    'payload',
     'status',
-    'attempts',
-    'error_message',
 ])]
 class PendingSync extends Model
 {
-    protected function casts(): array
-    {
-        return [
-            'payload' => 'array',
-        ];
-    }
 }

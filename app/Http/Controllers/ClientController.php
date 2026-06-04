@@ -21,7 +21,9 @@ class ClientController extends Controller
     {
         $clientes = Client::query()
             ->withCount([
-                'citas as visitas' => fn ($consulta) => $consulta->where('status', 'completed'),
+                'citas as visitas' => function ($consulta) {
+                    $consulta->where('status', 'completed');
+                },
             ])
             ->orderBy('name')
             ->get();

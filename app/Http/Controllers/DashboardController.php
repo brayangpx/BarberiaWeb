@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Appointment;
 use App\Services\InternalNotificationService;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -87,7 +88,7 @@ class DashboardController extends Controller
 
         foreach ($citas as $cita) {
             $hora = substr($cita->start_time, 0, 2) . ':00';
-            $numeroDia = date('N', strtotime($cita->appointment_date));
+            $numeroDia = Carbon::parse($cita->appointment_date)->dayOfWeekIso;
             $dia = $dias[$numeroDia] ?? 'Día';
 
             $clave = $dia . ' ' . $hora;

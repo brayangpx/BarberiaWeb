@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Appointment;
 use App\Models\InternalNotification;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class InternalNotificationService
@@ -46,11 +47,7 @@ class InternalNotificationService
                 continue;
             }
 
-            $fecha = $cita->appointment_date->toDateString();
-            $termino = now()->parse($fecha . ' ' . $cita->start_time)
-                ->addMinutes((int) ($cita->duration_minutes ?: 0));
-
-            if ($termino->lt($ahora)) {
+            if ($this->citaYaTermino($cita, $ahora)) {
                 $this->writeService->actualizar(Appointment::class, $cita->shared_id, [
                     'status' => 'cancelled',
                     'updated_at' => now(),
@@ -72,9 +69,9 @@ class InternalNotificationService
 
         foreach ($citas as $cita) {
             $fecha = $cita->appointment_date->toDateString();
-            $inicio = now()->parse($fecha . ' ' . $cita->start_time);
+            $inicio = Carbon::parse($fecha . ' ' . $cita->start_time);
 
-            if ($inicio->lt($ahora) || $inicio->gt($limite)) {
+            if (! $this->estaEnLosProximosMinutos($inicio, $ahora, $limite)) {
                 continue;
             }
 
@@ -91,5 +88,19 @@ class InternalNotificationService
                 'updated_at' => now(),
             ]);
         }
+    }
+
+    private function citaYaTermino(Appointment $cita, Carbon $ahora): bool
+    {
+        $fecha = $cita->appointment_date->toDateString();
+        $termino = Carbon::parse($fecha . ' ' . $cita->start_time)
+            ->addMinutes((int) ($cita->duration_minutes ?: 0));
+
+        return $termino->lt($ahora);
+    }
+
+    private function estaEnLosProximosMinutos(Carbon $inicio, Carbon $ahora, Carbon $limite): bool
+    {
+        return $inicio->gte($ahora) && $inicio->lte($limite);
     }
 }

@@ -38,6 +38,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/citas/previsualizacion-temporal', [HaircutPreviewController::class, 'generateTemp'])
         ->name('citas.previsualizacion');
 
+    Route::get('/citas/previsualizacion-temporal/{jobId}', [HaircutPreviewController::class, 'status'])
+        ->name('citas.previsualizacion.estado');
+
     Route::get('/clientes', [ClientController::class, 'index'])
         ->name('clientes');
 

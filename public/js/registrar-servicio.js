@@ -74,13 +74,45 @@ if (formularioServicio) {
         })
             .then(response => response.json())
             .then(data => {
-                btnGenerar.disabled = false;
-
                 if (!data.ok) {
+                    btnGenerar.disabled = false;
                     mensajePreview.textContent = data.error || 'No se pudo generar la previsualizacion.';
                     return;
                 }
 
+                revisarEstadoPreview(data.job_id);
+            })
+            .catch(() => {
+                btnGenerar.disabled = false;
+                mensajePreview.textContent = 'Ocurrio un error al generar la previsualizacion.';
+            });
+    });
+
+    function revisarEstadoPreview(jobId) {
+        if (!jobId) {
+            btnGenerar.disabled = false;
+            mensajePreview.textContent = 'No se pudo iniciar la previsualizacion.';
+            return;
+        }
+
+        fetch(formularioServicio.dataset.previewStatusUrl + '/' + jobId)
+            .then(response => response.json())
+            .then(data => {
+                if (!data.ok) {
+                    btnGenerar.disabled = false;
+                    mensajePreview.textContent = data.error || 'No se pudo generar la previsualizacion.';
+                    return;
+                }
+
+                if (data.status === 'pending' || data.status === 'processing') {
+                    mensajePreview.textContent = 'Generando previsualizacion...';
+                    setTimeout(function () {
+                        revisarEstadoPreview(jobId);
+                    }, 2000);
+                    return;
+                }
+
+                btnGenerar.disabled = false;
                 mensajePreview.textContent = 'Previsualizacion generada correctamente.';
 
                 originalPathInput.value = data.original_image_temp_path || '';
@@ -95,7 +127,7 @@ if (formularioServicio) {
             })
             .catch(() => {
                 btnGenerar.disabled = false;
-                mensajePreview.textContent = 'Ocurrio un error al generar la previsualizacion.';
+                mensajePreview.textContent = 'Ocurrio un error al revisar la previsualizacion.';
             });
-    });
+    }
 }

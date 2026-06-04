@@ -65,21 +65,9 @@ class AppointmentController extends Controller
 
     public function store(Request $request)
     {
-        $reglasTelefonoCliente = ['nullable', 'max:10'];
+        $this->validarFormulario($request);
 
-        if ($request->filled('client_name') && ! $request->filled('client_shared_id')) {
-            $reglasTelefonoCliente[] = Rule::unique('clients', 'phone');
-        }
-
-        $request->validate([
-            'final_price' => ['required', 'numeric', 'min:0'],
-            'duration_minutes' => ['nullable', 'integer', 'min:1'],
-            'client_phone' => $reglasTelefonoCliente,
-        ], [
-            'client_phone.unique' => 'Este telefono ya esta registrado con otro cliente.',
-        ]);
-
-        $this->crearCitaDesdeRequest($request);
+        $this->guardarCita($request);
 
         return redirect()
             ->route('agenda')
@@ -100,12 +88,28 @@ class AppointmentController extends Controller
         return back()->with('success', 'Estado actualizado.');
     }
 
-    private function crearCitaDesdeRequest(Request $request): string
+    private function validarFormulario(Request $request): void
     {
-        $clienteSharedId = $request->input('client_shared_id');
+        $reglasTelefonoCliente = ['nullable', 'max:10'];
+
+        if ($request->filled('client_name') && ! $request->filled('client_shared_id')) {
+            $reglasTelefonoCliente[] = Rule::unique('clients', 'phone');
+        }
+
+        $request->validate([
+            'final_price' => ['required', 'numeric', 'min:0'],
+            'duration_minutes' => ['nullable', 'integer', 'min:1'],
+            'client_phone' => $reglasTelefonoCliente,
+        ], [
+            'client_phone.unique' => 'Este telefono ya esta registrado con otro cliente.',
+        ]);
+    }
+
+    private function guardarCita(Request $request): string
+    {
         $hora = $request->input('start_time') ?: now()->format('H:i');
         $duracion = $request->input('duration_minutes');
-        $tipoCita = $request->filled('duration_minutes') ? 'scheduled' : 'quick';
+        $tipoCita = $this->tipoCita($request);
 
         if ($tipoCita === 'scheduled') {
             $this->validarHorarioPermitido($hora);
@@ -118,19 +122,7 @@ class AppointmentController extends Controller
             $this->validarHorarioDisponible($fecha, $hora, (int) $duracion);
         }
 
-        if (! $clienteSharedId && $request->filled('client_name')) {
-            $clienteSharedId = $this->sharedIds->crear('client');
-
-            $this->writeService->insertar(Client::class, [
-                'shared_id' => $clienteSharedId,
-                'name' => $request->input('client_name'),
-                'phone' => $request->input('client_phone'),
-                'notes' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
+        $clienteSharedId = $this->crearClienteSiHaceFalta($request);
         $sharedId = $this->sharedIds->crear('appt');
         $usuario = Auth::user();
 
@@ -150,10 +142,42 @@ class AppointmentController extends Controller
             'updated_at' => now(),
         ]);
 
+        $this->guardarPreviewSiExiste($request, $sharedId);
+
+        return $sharedId;
+    }
+
+    private function tipoCita(Request $request): string
+    {
+        return $request->filled('duration_minutes') ? 'scheduled' : 'quick';
+    }
+
+    private function crearClienteSiHaceFalta(Request $request): ?string
+    {
+        $clienteSharedId = $request->input('client_shared_id');
+
+        if (! $clienteSharedId && $request->filled('client_name')) {
+            $clienteSharedId = $this->sharedIds->crear('client');
+
+            $this->writeService->insertar(Client::class, [
+                'shared_id' => $clienteSharedId,
+                'name' => $request->input('client_name'),
+                'phone' => $request->input('client_phone'),
+                'notes' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        return $clienteSharedId;
+    }
+
+    private function guardarPreviewSiExiste(Request $request, string $appointmentSharedId): void
+    {
         if ($request->filled('original_image_temp_path') && $request->filled('generated_image_temp_path')) {
             $this->writeService->insertar(HaircutPreview::class, [
                 'shared_id' => $this->sharedIds->crear('preview'),
-                'appointment_shared_id' => $sharedId,
+                'appointment_shared_id' => $appointmentSharedId,
                 'original_image_url' => $request->input('original_image_temp_path'),
                 'generated_image_url' => $request->input('generated_image_temp_path'),
                 'prompt' => $request->input('preview_prompt'),
@@ -163,8 +187,6 @@ class AppointmentController extends Controller
                 'updated_at' => now(),
             ]);
         }
-
-        return $sharedId;
     }
 
     private function validarHorarioPermitido(string $hora): void
