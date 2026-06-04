@@ -86,9 +86,6 @@ class DemoDataSeeder extends Seeder
     private function pesosHoras(): array
     {
         return [
-            '08:00' => 4,
-            '09:00' => 7,
-            '10:00' => 9,
             '11:00' => 12,
             '12:00' => 12,
             '13:00' => 8,
@@ -98,6 +95,8 @@ class DemoDataSeeder extends Seeder
             '17:00' => 18,
             '18:00' => 11,
             '19:00' => 6,
+            '20:00' => 5,
+            '21:00' => 3,
         ];
     }
 
@@ -106,7 +105,7 @@ class DemoDataSeeder extends Seeder
         return [
             4 => ['14:00', '15:00', '16:00'],
             5 => ['15:00', '16:00', '17:00'],
-            6 => ['10:00', '11:00', '12:00', '15:00', '16:00', '17:00'],
+            6 => ['11:00', '12:00', '15:00', '16:00', '17:00'],
         ];
     }
 
@@ -133,7 +132,7 @@ class DemoDataSeeder extends Seeder
     {
         $base = 3;
 
-        if (in_array($hora, ['10:00', '11:00', '12:00', '14:00', '18:00'], true)) {
+        if (in_array($hora, ['11:00', '12:00', '14:00', '18:00'], true)) {
             $base = 7;
         }
 
@@ -149,7 +148,7 @@ class DemoDataSeeder extends Seeder
             $base += 10;
         }
 
-        if ($dia === 7 || $hora === '08:00' || $hora === '19:00') {
+        if ($dia === 7 || $hora === '11:00' || $hora === '21:00') {
             $base = max(2, $base - 5);
         }
 
@@ -217,8 +216,6 @@ class DemoDataSeeder extends Seeder
     private function crearCitasDeHoy(User $usuario, $cortes, array $clientesGuardados): void
     {
         $citasDeHoy = [
-            ['09:00', 'completed', false],
-            ['10:00', 'completed', true],
             ['11:00', 'confirmed', false],
             ['12:00', 'completed', true],
             ['14:00', 'pending', false],
@@ -226,6 +223,8 @@ class DemoDataSeeder extends Seeder
             ['15:30', 'pending', false],
             ['16:00', 'confirmed', true],
             ['16:30', 'pending', false],
+            ['18:00', 'completed', false],
+            ['20:00', 'completed', true],
         ];
 
         foreach ($citasDeHoy as [$hora, $estado, $esRapida]) {

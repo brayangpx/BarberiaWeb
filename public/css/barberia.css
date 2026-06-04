@@ -27,6 +27,10 @@ body {
     padding-bottom: 80px;
 }
 
+.contenido-principal {
+    min-height: 100vh;
+}
+
 .card {
     border: 0;
     border-radius: 16px;
@@ -55,6 +59,36 @@ body {
     font-weight: 600;
 }
 
+.menu-movil {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1030;
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+}
+
+.menu-movil a {
+    color: #555555;
+    text-decoration: none;
+    font-size: 12px;
+    text-align: center;
+    padding: 6px 4px;
+}
+
+.menu-movil a.active {
+    color: #6f42c1;
+    font-weight: 600;
+}
+
+@media (max-width: 767.98px) {
+    .contenido-principal .container-fluid {
+        padding-bottom: 96px !important;
+    }
+}
+
 .preview-box {
     min-height: 150px;
     border: 1px dashed #bbbbbb;
@@ -71,6 +105,16 @@ body {
     vertical-align: middle;
 }
 
+.tabla-mapa-calor {
+    min-width: 880px;
+}
+
+.tabla-mapa-calor th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+}
+
 .level-low {
     background: #d8f3dc !important;
 }
@@ -81,4 +125,20 @@ body {
 
 .level-high {
     background: #f8d7da !important;
+}
+
+@media (max-width: 767.98px) {
+    .tabla-mapa-calor {
+        font-size: 12px;
+    }
+
+    .tabla-mapa-calor th,
+    .tabla-mapa-calor td {
+        min-width: 58px;
+        padding: 8px 6px;
+    }
+
+    .tabla-mapa-calor th:first-child {
+        min-width: 96px;
+    }
 }

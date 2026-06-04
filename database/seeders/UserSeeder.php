@@ -17,7 +17,7 @@ class UserSeeder extends Seeder
         if ($usuario) {
             $usuario->update([
                 'name' => 'Barbero principal',
-                'password' => 'password',
+                'password' => '1234',
                 'role' => 'barber',
             ]);
 

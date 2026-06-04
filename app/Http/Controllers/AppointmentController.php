@@ -191,8 +191,8 @@ class AppointmentController extends Controller
 
     private function validarHorarioPermitido(string $hora): void
     {
-        $horaInicioPermitido = '08:00';
-        $horaFinPermitido = '19:30';
+        $horaInicioPermitido = '11:00';
+        $horaFinPermitido = '21:00';
 
         if ($hora < $horaInicioPermitido || $hora > $horaFinPermitido) {
             throw ValidationException::withMessages([
